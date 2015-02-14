@@ -72,7 +72,7 @@ while running:
         
     fps=clock.get_FPS()
     if fps<60:
-        gamespeed()
+        gamespeed(fps)
     clock.tick(120)
     display.flip()
 quit()
