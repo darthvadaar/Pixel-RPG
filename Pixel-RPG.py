@@ -1,8 +1,8 @@
 from pygame import *
 def gamespeed(fps):
-    change= 60//fps
+    change= 60/fps
     player.speed=player.speed*change
-    
+background=image.load("Art\map.png")
 def changepos(rect,key,run,speed):
     if run:
         d = speed
@@ -36,7 +36,7 @@ class Player(People):
         self.level = level
         self.kind = kind
         
-screen = display.set_mode(1024,768)  
+screen = display.set_mode((1024,768)) 
 running =True
 mode = 0 #What menu the user is on (0 is character selection, 1 is actual game)
 wizard = Rect(50,100,450,450) #Used for selection screen to pick character
@@ -70,8 +70,8 @@ while running:
         changepos(player.size,kb,player.run,player.speed) #Change pos of player depending on keys being pressed
         draw.rect(screen,(255,255,255),player.size)
         
-    fps=clock.get_FPS()
-    if fps<60:
+    fps=clock.get_fps()
+    if fps<60 and fps!=0:
         gamespeed(fps)
     clock.tick(120)
     display.flip()
