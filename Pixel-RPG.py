@@ -1,5 +1,8 @@
 from pygame import *
-
+def gamespeed(fps):
+    change= 60//fps
+    player.speed=player.speed*change
+    
 def changepos(rect,key,run,speed):
     if run:
         d = speed
@@ -67,7 +70,9 @@ while running:
         changepos(player.size,kb,player.run,player.speed) #Change pos of player depending on keys being pressed
         draw.rect(screen,(255,255,255),player.size)
         
-    clock.get_FPS()
+    fps=clock.get_FPS()
+    if fps<60:
+        gamespeed()
     clock.tick(120)
     display.flip()
 quit()
