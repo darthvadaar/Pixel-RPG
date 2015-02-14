@@ -67,7 +67,7 @@ while running:
         changepos(player.size,kb,player.run,player.speed) #Change pos of player depending on keys being pressed
         draw.rect(screen,(255,255,255),player.size)
         
-                
+    clock.get_FPS()
     clock.tick(120)
     display.flip()
 quit()
