@@ -36,7 +36,7 @@ class Player(People):
         self.level = level
         self.kind = kind
         
-screen = display.set_mode(1024,768)  
+screen = display.set_mode((1024,768))  
 running =True
 mode = 0 #What menu the user is on (0 is character selection, 1 is actual game)
 wizard = Rect(50,100,450,450) #Used for selection screen to pick character
@@ -56,6 +56,7 @@ while running:
     if mode == 0:  #Character selections
         draw.rect(screen,(0,0,255),wizard) #The wizard box
         draw.rect(screen,(0,0,255),knight) #The kinght box
+        draw.rect(screen,(255,0,0),archer)
         if wizard.collidepoint(mx,my) and mb[0] == 1:
             mode = 1
             player = Player(90,2,20,5,150,60,0,1,'Wizard',512,384)
