@@ -17,7 +17,7 @@ def changepos(rect,key,run,speed):
 class People:
     def __init__(self,health,speed,attack,defense,mana):
         self.run = False
-        self.size = Rect(0,0,10,20)
+        self.size = Rect(512,384,10,20)
         self.health = health
         self.speed = speed
         self.attack = attack
