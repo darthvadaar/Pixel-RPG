@@ -15,9 +15,9 @@ def changepos(rect,key,run,speed):
         rect[0] += d
         
 class People:
-    def __init__(self,health,speed,attack,defense,mana):
+    def __init__(self,health,speed,attack,defense,mana,posx,posy):
         self.run = False
-        self.size = Rect(512,384,10,20)
+        self.size = Rect(posx,posy,10,20)
         self.health = health
         self.speed = speed
         self.attack = attack
@@ -26,8 +26,8 @@ class People:
 
 
 class Player(People):
-    def __init__(self,health,speed,attack,defense,mana,stamina,money,level,kind):
-        People.__init__(self,health,speed,attack,defense,mana)
+    def __init__(self,health,speed,attack,defense,mana,stamina,money,level,kind,posx,posy):
+        People.__init__(self,health,speed,attack,defense,mana,posx,posy)
         self.stamina = stamina
         self.money = money
         self.level = level
@@ -55,10 +55,10 @@ while running:
         draw.rect(screen,(0,0,255),knight) #The kinght box
         if wizard.collidepoint(mx,my) and mb[0] == 1:
             mode = 1
-            player = Player(90,2,20,5,150,60,0,1,'Wizard')
+            player = Player(90,2,20,5,150,60,0,1,'Wizard',512,384)
         if knight.collidepoint(mx,my) and mb[0] == 1:
             mode = 1
-            player = Player(110,9,20,10,40,80,0,1,'Knight')
+            player = Player(110,9,20,10,40,80,0,1,'Knight',512,384)
     if mode == 1: #When the game is actually being played
         if kb[K_LSHIFT] == 1:
             player.run = True
