@@ -29,18 +29,24 @@ class People:
 
 
 class Player(People):
-    def __init__(self,health,speed,attack,defense,mana,stamina,money,level,kind,posx,posy):
+    def __init__(self,health,speed,attack,defense,mana,stamina,money,level,kind,posx,posy,col):
         People.__init__(self,health,speed,attack,defense,mana,posx,posy)
         self.stamina = stamina
         self.money = money
         self.level = level
         self.kind = kind
+        self.col = col
         
+<<<<<<< HEAD
 screen = display.set_mode((1024,768)) 
+=======
+screen = display.set_mode((1024,768))  
+>>>>>>> origin/master
 running =True
 mode = 0 #What menu the user is on (0 is character selection, 1 is actual game)
-wizard = Rect(50,100,450,450) #Used for selection screen to pick character
-knight = Rect(525,100,450,450)
+wizard = Rect(30,384,300,300) #Used for selection screen to pick character
+knight = Rect(360,384,300,300)
+archer = Rect(690,384,300,300)
 
 clock = time.Clock()
 
@@ -55,13 +61,17 @@ while running:
             running = False
     if mode == 0:  #Character selections
         draw.rect(screen,(0,0,255),wizard) #The wizard box
-        draw.rect(screen,(0,0,255),knight) #The kinght box
+        draw.rect(screen,(255,0,0),knight) #The kinght box
+        draw.rect(screen,(0,255,0),archer)
         if wizard.collidepoint(mx,my) and mb[0] == 1:
             mode = 1
-            player = Player(90,2,20,5,150,60,0,1,'Wizard',512,384)
+            player = Player(80,3,30,10,100,60,0,1,'Wizard',512,384,(0,0,255))
         if knight.collidepoint(mx,my) and mb[0] == 1:
             mode = 1
-            player = Player(110,9,20,10,40,80,0,1,'Knight',512,384)
+            player = Player(120,2,20,30,20,80,0,1,'Knight',512,384,(255,0,0))
+        if archer.collidepoint(mx,my) and mb[0] == 1:
+            mode = 1
+            player = Player(100,4,10,20,40,100,0,1,'Archer',512,384,(0,255,0))
     if mode == 1: #When the game is actually being played
         if kb[K_LSHIFT] == 1:
             player.run = True
@@ -71,7 +81,11 @@ while running:
         draw.rect(screen,(255,255,255),player.size)
         
     fps=clock.get_fps()
+<<<<<<< HEAD
     if fps<60 and fps!=0:
+=======
+    if fps<60:
+>>>>>>> origin/master
         gamespeed(fps)
     clock.tick(120)
     display.flip()
