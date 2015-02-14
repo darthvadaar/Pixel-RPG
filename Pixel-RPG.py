@@ -36,12 +36,8 @@ class Player(People):
         self.level = level
         self.kind = kind
         self.col = col
-        
-<<<<<<< HEAD
+
 screen = display.set_mode((1024,768)) 
-=======
-screen = display.set_mode((1024,768))  
->>>>>>> origin/master
 running =True
 mode = 0 #What menu the user is on (0 is character selection, 1 is actual game)
 wizard = Rect(30,384,300,300) #Used for selection screen to pick character
@@ -81,11 +77,7 @@ while running:
         draw.rect(screen,(255,255,255),player.size)
         
     fps=clock.get_fps()
-<<<<<<< HEAD
     if fps<60 and fps!=0:
-=======
-    if fps<60:
->>>>>>> origin/master
         gamespeed(fps)
     clock.tick(120)
     display.flip()
