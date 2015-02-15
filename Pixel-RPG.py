@@ -1,6 +1,5 @@
 from pygame import *
 init()
-=======
 
 def gamespeed(fps):
     change= 60/fps
