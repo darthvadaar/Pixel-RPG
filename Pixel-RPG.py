@@ -1,11 +1,11 @@
 from pygame import *
-wizard_move = [[image.load("art\wizard_up_0.png"),image.load("art\wizard_up_1.png"),image.load("art\wizard_up_2.png"),image.load("art\wizard_up_3.png")],[image.load("art\wizard_down_0.png"),
-                    image.load("art\wizard_down_1.png"),image.load("art\wizard_down_2.png"),image.load("art\wizard_down_3.png")],[image.load("art\wizard_left_0.png"),
-                    image.load("art\wizard_left_1.png")],[image.load("art\wizard_right_0.png"),image.load("art\wizard_right_1.png")]] #[[up],[down],[left],[right]]
+wizard_move = [[image.load("Art\wizard_up_0.png"),image.load("Art\wizard_up_1.png"),image.load("Art\wizard_up_2.png"),image.load("Art\wizard_up_3.png")],[image.load("Art\wizard_down_0.png"),
+                    image.load("Art\wizard_down_1.png"),image.load("Art\wizard_down_2.png"),image.load("Art\wizard_down_3.png")],[image.load("Art\wizard_left_0.png"),
+                    image.load("Art\wizard_left_1.png")],[image.load("Art\wizard_right_0.png"),image.load("Art\wizard_right_1.png")]] #[[up],[down],[left],[right]]
 
-#archer_move = [[image.load("art\archer_up_0.png"),image.load("art\archer_up_1.png")],[image.load("art\archer_down_0.png"),image.load("art\archer_down_1.png")],
- #              [image.load("art\archer_left_0.png"),image.load("art\archer_left_1.png")],[image.load("art\archer_right_0.png"),
-  #              image.load("art\archer_right_1.png")]] #[[up],[down],[left],[right]]
+#archer_move = [[image.load("Art\archer_up_0.png"),image.load("Art\archer_up_1.png")],[image.load("Art\archer_down_0.png"),image.load("Art\archer_down_1.png")],
+ #              [image.load("Art\archer_left_0.png"),image.load("Art\archer_left_1.png")],[image.load("Art\archer_right_0.png"),
+  #              image.load("Art\archer_right_1.png")]] #[[up],[down],[left],[right]]
 
 
 def gamespeed(fps):
@@ -44,7 +44,7 @@ class Player(People):
         self.money = money
         self.level = level
         self.kind = kind
-        self.col = cols
+        self.col = col
         #self.animation = animation   
 
 screen = display.set_mode((1024,768)) 
