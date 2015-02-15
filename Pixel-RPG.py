@@ -40,9 +40,9 @@ class Player(People):
 screen = display.set_mode((1024,768)) 
 running =True
 mode = 0 #What menu the user is on (0 is character selection, 1 is actual game)
-wizard = Rect(30,384,300,300) #Used for selection screen to pick character
-knight = Rect(360,384,300,300)
-archer = Rect(690,384,300,300)
+wizard = Rect(30,234,300,300) #Used for selection screen to pick character
+knight = Rect(360,234,300,300)
+archer = Rect(690,234,300,300)
 
 clock = time.Clock()
 
@@ -74,7 +74,7 @@ while running:
         else:
             player.run = False
         changepos(player.size,kb,player.run,player.speed) #Change pos of player depending on keys being pressed
-        draw.rect(screen,(255,255,255),player.size)
+        draw.rect(screen,player.col,player.size)
         
     fps=clock.get_fps()
     if fps<60 and fps!=0:
