@@ -3,6 +3,10 @@ wizard_move = [[image.load("art\wizard_up_0.png"),image.load("art\wizard_up_1.pn
                     image.load("art\wizard_down_1.png"),image.load("art\wizard_down_2.png"),image.load("art\wizard_down_3.png")],[image.load("art\wizard_left_0.png"),
                     image.load("art\wizard_left_1.png")],[image.load("art\wizard_right_0.png"),image.load("art\wizard_right_1.png")]] #[[up],[down],[left],[right]]
 
+#archer_move = [[image.load("art\archer_up_0.png"),image.load("art\archer_up_1.png")],[image.load("art\archer_down_0.png"),image.load("art\archer_down_1.png")],
+ #              [image.load("art\archer_left_0.png"),image.load("art\archer_left_1.png")],[image.load("art\archer_right_0.png"),
+  #              image.load("art\archer_right_1.png")]] #[[up],[down],[left],[right]]
+
 
 def gamespeed(fps):
     change= 60/fps
@@ -40,7 +44,7 @@ class Player(People):
         self.money = money
         self.level = level
         self.kind = kind
-        self.col = col
+        self.col = cols
         #self.animation = animation   
 
 screen = display.set_mode((1024,768)) 
@@ -83,5 +87,8 @@ while running:
         draw.rect(screen,(255,255,255),player.size)
         
     fps=clock.get_fps()
+    if fps<60 and fps!=0:
+        gamespeed(fps)
+    clock.tick(120)
     display.flip()
 quit()
