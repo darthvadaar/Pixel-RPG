@@ -1,5 +1,7 @@
 from pygame import *
 init()
+=======
+
 def gamespeed(fps):
     change= 60/fps
     player.speed=player.speed*change
@@ -30,20 +32,18 @@ class People:
 
 
 class Player(People):
-    def __init__(self,health,speed,attack,defense,mana,stamina,money,level,kind,posx,posy,col):
+    def __init__(self,health,speed,attack,defense,mana,stamina,money,level,kind,posx,posy,col,):#animation
         People.__init__(self,health,speed,attack,defense,mana,posx,posy)
         self.stamina = stamina
         self.money = money
         self.level = level
         self.kind = kind
         self.col = col
+        #self.animation = animation   
 
 screen = display.set_mode((1024,768)) 
 running =True
 mode = 0 #What menu the user is on (0 is character selection, 1 is actual game)
-wizard = Rect(30,234,300,300) #Used for selection screen to pick character
-knight = Rect(360,234,300,300)
-archer = Rect(690,234,300,300)
 
 clock = time.Clock()
 
