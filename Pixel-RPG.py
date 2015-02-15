@@ -1,8 +1,9 @@
 from pygame import *
+init()
 def gamespeed(fps):
     change= 60/fps
     player.speed=player.speed*change
-background=image.load("Art\map.png")
+background=image.load("Art\map.jpg")
 def changepos(rect,key,run,speed):
     if run:
         d = speed
@@ -74,11 +75,13 @@ while running:
         else:
             player.run = False
         changepos(player.size,kb,player.run,player.speed) #Change pos of player depending on keys being pressed
+        screen.blit(background,(0,0))
         draw.rect(screen,player.col,player.size)
         
     fps=clock.get_fps()
-    if fps<60 and fps!=0:
-        gamespeed(fps)
-    clock.tick(120)
+    print(fps)
+    #if fps<60 and fps!=0:
+        #gamespeed(fps)
+    clock.tick(60)
     display.flip()
 quit()
