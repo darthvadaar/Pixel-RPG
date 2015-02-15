@@ -83,8 +83,5 @@ while running:
         draw.rect(screen,(255,255,255),player.size)
         
     fps=clock.get_fps()
-    if fps<60 and fps!=0:
-        gamespeed(fps)
-    clock.tick(120)
     display.flip()
 quit()
