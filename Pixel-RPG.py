@@ -1,5 +1,7 @@
 from pygame import *
-#archer_move = [[image.load()]] #[[up],[down],[left],[right]]
+wizard_move = [[image.load("art\wizard_up_0.png"),image.load("art\wizard_up_1.png"),image.load("art\wizard_up_2.png"),image.load("art\wizard_up_3.png")],[image.load("art\wizard_down_0.png"),
+                    image.load("art\wizard_down_1.png"),image.load("art\wizard_down_2.png"),image.load("art\wizard_down_3.png")],[image.load("art\wizard_left_0.png"),
+                    image.load("art\wizard_left_1.png")],[image.load("art\wizard_right_0.png"),image.load("art\wizard_right_1.png")]] #[[up],[down],[left],[right]]
 
 
 def gamespeed(fps):
