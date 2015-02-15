@@ -1,4 +1,7 @@
 from pygame import *
+#archer_move = [[image.load()]] #[[up],[down],[left],[right]]
+
+
 def gamespeed(fps):
     change= 60/fps
     player.speed=player.speed*change
@@ -29,13 +32,18 @@ class People:
 
 
 class Player(People):
-    def __init__(self,health,speed,attack,defense,mana,stamina,money,level,kind,posx,posy,col):
+    def __init__(self,health,speed,attack,defense,mana,stamina,money,level,kind,posx,posy,col,):#animation
         People.__init__(self,health,speed,attack,defense,mana,posx,posy)
         self.stamina = stamina
         self.money = money
         self.level = level
         self.kind = kind
         self.col = col
+        #self.animation = animation
+    
+        
+        
+        
 
 screen = display.set_mode((1024,768)) 
 running =True
