@@ -22,6 +22,8 @@ init()
 #changed colour scheme for the HUD Components
 #added projectiles for archer and updated the Projectile Class (if self.kind == "Arrow")
 #Ln 1072 - Fixed click so that projectile isn't created with any click
+#Replaced old arrow images with better one
+#Added poisonArrow.png and improved the image.load system in projectile class
 ####################################################
 #=================================================== Classes ===================================================#
 
@@ -549,17 +551,22 @@ class Enemy(sprite.Sprite):
 class Projectile(sprite.Sprite):
     def __init__(self,x,y,vx,vy,angle,bigBulletSize,kind):
         super().__init__()
-        if player.kind == "Archer":
-            self.image = image.load('Art\Weapons\Arrow.png').convert()
-        elif self.kind == "Wizard":
-            player.image = image.load('Art\Weapons\spell.png').convert()
-        self.image.set_colorkey((255,255,255))
+        self.kind = kind
         self.x = x #Inital pos x
         self.y = y #Inital pos y
         self.vx = vx #Horizontal velocity
         self.vy = vy #Vertical velocity
         self.angle = angle
-        self.kind = kind
+        if self.kind == "PoisonArrow":
+            self.image = image.load('Art\Weapons\poisonArrow.png').convert()
+        else:
+            if player.kind == "Archer":
+                self.image = image.load('Art\Weapons\Arrow.png').convert()
+            elif player.kind == "Wizard":
+                player.image = image.load('Art\Weapons\spell.png').convert()  
+        self.image.set_colorkey((255,255,255))
+        
+        
         self.display = transform.rotate(self.image,degrees(-self.angle))
         if self.kind == 'BigBullet':
             self.display = transform.scale(self.display,(bigBulletSize*5,bigBulletSize*5))
@@ -598,7 +605,7 @@ Offsets the arrow depending on where the player is moving (faster if player is m
                 group.remove(self)
 
 #Skills and more complex projectiles
-        elif self.kind == 'PoisonArrow':    
+        elif self.kind == 'PoisonArrow':
             self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)
             for enemy in enemyList:
                 if self.rect.colliderect(enemy.rect):
