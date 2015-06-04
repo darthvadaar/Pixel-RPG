@@ -8,7 +8,7 @@ from os.path import isfile, join
 import glob
 from threading import Timer
 init()
-
+##### FOLLOW ME SKILL #### 
 
 ################# KNOWN BUGS ########################
 #Turtle skill basically does nothing because enemy.speed is not connected to the enemy speed in any way ** FIX THIS RISHI **
@@ -283,7 +283,7 @@ class Player(sprite.Sprite):
                         spriteCount += 0.5
                         for i in enemyList:
                             if sprite.colliderect(i.rect):
-                                i.health -= self.damage #subtracts the enemy health by your damage
+                                i.health -= self.damage + 10 #subtracts the enemy health by your damage
                         
             elif self.hotbar[self.currentSkill] == "Ring":  #Area attack - attacks all enemies in vicinity
                 if skillFlag and self.mana > 10 and attack == False:
@@ -295,13 +295,13 @@ class Player(sprite.Sprite):
                         spriteCount += 1
                         for i in enemyList:
                             if sprite.colliderect(i.rect):
-                                i.health -= self.damage
+                                i.health -= self.damage + 10
                     else:
                         spriteCount = 0
                         attack = False
                                              
             elif self.hotbar[self.currentSkill] == "Boost" : #self.attack *= 2 and self.defense /= 2
-                if skillFlag and self.mana > 5:                    
+                if skillFlag and self.mana > 5 and attack == False:                    
                     self.mana -= 5
                     timer = Timer(10.0 , self.statReset, [None, None, None, self.damage, self.defense,None])    #takes old stats and creates a timer
                     self.damage *= 2
@@ -323,16 +323,16 @@ class Player(sprite.Sprite):
                 if attack:
                     if spriteCount < len(self.skillSprites[2]):
                         sprite = screen.blit(self.skillSprites[2][int(spriteCount)],(self.x - self.skillSprites[2][int(spriteCount)].get_width()/2,  self.y - self.skillSprites[2][int(spriteCount)].get_height()/2))
-                        spriteCount += 0.7  #only go up by 0.5 frames every time to reduce super fast animations
+                        spriteCount += 0.7  #only go up by 0.7 frames every time to reduce super fast animations
                         for i in enemyList:
                             if sprite.colliderect(i.rect):
-                                i.speed -= self.damage  #reduces enemy speed by self.damage
+                                i.speed -= 2  #reduces enemy speed by self.damage
                     else: 
                         spriteCount = 0
                         attack = False
                         
             elif self.hotbar[self.currentSkill] == "Charge":
-                if skillFlag and self.mana > 5:
+                if skillFlag and self.mana > 5 and attack == False:
                     attack = True
                 if attack:
                     self.mana -= 5
@@ -350,8 +350,7 @@ class Player(sprite.Sprite):
                     spriteCount = 0
                         
             elif self.hotbar[self.currentSkill] == "Shadow":
-                print(self.AIignore,attack,spriteCount)
-                if skillFlag and self.mana > 10:
+                if skillFlag and self.mana > 10 and attack == False:
                     self.mana -= 10
                     attack = True
                 if attack:
@@ -364,8 +363,8 @@ class Player(sprite.Sprite):
 
         elif player.kind == "Archer":
             if self.hotbar[self.currentSkill] == "Sniper":
-                if skillFlag and self.mana > 30:
-                    self.mana -= 30
+                if skillFlag and self.mana > 30 and attack == False:
+                    self.mana -= 25
                     self.ang = degrees(atan2(mx - self.x, my - self.y)) + 180
                     attack = True
                 if attack:
@@ -383,26 +382,46 @@ class Player(sprite.Sprite):
                         sprite = screen.blit(spriteImg, spriteImgNew)
                         for i in enemyList:
                             if sprite.colliderect(i.rect):
-                                i.health -= self.damage + 50
+                                i.health -= self.damage + 25
                                 
             elif self.hotbar[self.currentSkill] == "Barrage":
-                print(self.bullets)
-                if skillFlag and self.mana >= 30:
+                if skillFlag and self.mana >= 30 and attack == False:
                     self.mana -= 30
                     attack = True
                     self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)   #have to offset with weird values for some reason
                 if attack:
                     self.bullets.add(Projectile(self.x, self.y, 10*cos(-self.ang), 10*sin(-self.ang), -self.ang, None, 'Arrow'))
                     spriteCount += 1
-                    if spriteCount > 30:
+                    if spriteCount > 25:
                         spriteCount = 0
                         attack = False
-                    
-                
-                        
+
+            elif self.hotbar[self.currentSkill] == "RadiusBarrage":
+                if skillFlag and self.mana >= 30 and attack == False:
+                    self.mana -= 30
+                    attack = True
+                    self.ang = 0
+                if attack:
+                    self.ang += 6
+                    self.bullets.add(Projectile(self.x, self.y, 10*cos(-self.ang), 10*sin(-self.ang), -self.ang, None, 'Arrow'))
+                    if self.ang > 360 :
+                        self.ang = 0
+                        attack = False
+
+            elif self.hotbar[self.currentSkill] == "FollowMe":
+                if skillFlag and self.mana >= 30 and attack == False:
+                    self.mana -= 30
+                    attack = True
+                if attack:
+                    self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)   #have to offset with weird values for some reason
+                    self.bullets.add(Projectile(self.x, self.y, 10*cos(-self.ang), 10*sin(-self.ang), -self.ang, None, 'FollowArrow'))
+                    spriteCount += 1
+                    if spriteCount > 25:
+                        spriteCount = 0
+                        attack = False
+                       
             elif self.hotbar[self.currentSkill] == "ForestGump":
-                print(self.damage,self.stamina)
-                if skillFlag and self.mana >= 15:
+                if skillFlag and self.mana >= 15 and attack == False:
                     self.mana -= 15
                     timer = Timer(10.0 , self.statReset, [None, None, self.stamina, self.damage, None, None])    #health, mana,stamina, damage, defense, speed
                     self.damage /= 2
@@ -416,10 +435,6 @@ class Player(sprite.Sprite):
                     else:
                         spriteCount = 0
                         attack  = False
-
-                    
-                    
-                    
 
 
         return attack, spriteCount  #returning so that the last known value of attack and spriteCount can be reused
@@ -590,6 +605,19 @@ Offsets the arrow depending on where the player is moving (faster if player is m
                 self.speed(key)
             else:
                 group.remove(self)
+                
+        elif self.kind == 'FollowArrow':
+            player.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)
+            for enemy in enemyList:
+                if self.rect.colliderect(enemy.rect):
+                    player.bullets.remove(self)
+                    enemy.health -= player.damage
+            if -50<= self.x <= 1074 and -50<= self.y <= 750:
+                self.speed(key)
+            else:
+                group.remove(self)
+
+            
         elif self.kind == 'BigBullet':
             for enemy in enemyList:
                 if self.rect.colliderect(enemy.rect):
@@ -607,6 +635,7 @@ Offsets the arrow depending on where the player is moving (faster if player is m
                 self.speed(key)
             else:
                 enemyArrows.remove(self)
+        
                 
 class Weapons(sprite.Sprite):
     def __init__(self,name,description,damage,pic,speed,kind):
@@ -1154,7 +1183,7 @@ while running:
                 mode = 1
                 #Archer
                 #health, stamina, mana, inventory, currentWeapon, currentArmour, currentBoots, money, kind, damage, defense, hotbar
-                player = Player(50,100,20,[[],[],[]],Weapons('Old Bow','A REALLY bad bow',5,'Art\Weapons\Bows\Bow0.png',1,'Bow'),Armour('Bob2','Bob2',0.10,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Archer',10,0.1,["Sniper","Barrage","ForestGump"])
+                player = Player(50,100,20,[[],[],[]],Weapons('Old Bow','A REALLY bad bow',5,'Art\Weapons\Bows\Bow0.png',1,'Bow'),Armour('Bob2','Bob2',0.10,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Archer',10,0.1,["Sniper","FollowMe","RadiusBarrage"])
                 back_x,back_y = 0,0
                 mixer.music.stop()
                 
