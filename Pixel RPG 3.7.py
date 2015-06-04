@@ -11,10 +11,9 @@ init()
 ##### FOLLOW ME SKILL #### 
 
 ################# KNOWN BUGS ########################
-#Turtle skill basically does nothing because enemy.speed is not connected to the enemy speed in any way ** FIX THIS RISHI **
+#Turtle multiply by 0.5 !!!!
 # ADD A SPRITE FOR SHADOW SKILL
-#Sniper skill goes atop the HUD bottom
-#Charge and skill broke, goes diagnolly
+#ADD A SPRITE FOR POISON (ON THE PLAYER AND POISONED ENEMY)
 ####################################################
 
 ################# CHANGES ########################
@@ -408,17 +407,13 @@ class Player(sprite.Sprite):
                         self.ang = 0
                         attack = False
 
-            elif self.hotbar[self.currentSkill] == "FollowMe":
+            elif self.hotbar[self.currentSkill] == "PoisonArrow":
                 if skillFlag and self.mana >= 30 and attack == False:
-                    self.mana -= 30
-                    attack = True
-                if attack:
+                    self.mana -= 10
                     self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)   #have to offset with weird values for some reason
-                    self.bullets.add(Projectile(self.x, self.y, 10*cos(-self.ang), 10*sin(-self.ang), -self.ang, None, 'FollowArrow'))
-                    spriteCount += 1
-                    if spriteCount > 25:
-                        spriteCount = 0
-                        attack = False
+                    self.bullets.add(Projectile(self.x, self.y, 10*cos(-self.ang), 10*sin(-self.ang), -self.ang, None, 'PoisonArrow'))
+                    
+                        
                        
             elif self.hotbar[self.currentSkill] == "ForestGump":
                 if skillFlag and self.mana >= 15 and attack == False:
@@ -486,14 +481,7 @@ class Enemy(sprite.Sprite):
         self.moves = [-1,1]
         self.bullets = sprite.Group()
         self.angle = None
-
-    def statRest(health,speed,damage):   #resets stats to remove debuffs
-        if health != None:
-            self.health = health
-        elif speed != None:
-            self.speed = speed
-        elif damage != None:
-            self.damage = damage
+        self.poisoned = []
 
     def createProjectile(self):
         centx = self.rect[0]+self.rect[2]/2 #x coord of starting pos for arrow
@@ -554,14 +542,17 @@ class Enemy(sprite.Sprite):
         self.movement(cx,cy)
         self.takeDamage(enemies)
         screen.blit(self.image,(self.rect[0],self.rect[1]))
+        for i in self.poisoned:
+            i.health -= 1
+            
 
 class Projectile(sprite.Sprite):
     def __init__(self,x,y,vx,vy,angle,bigBulletSize,kind):
         super().__init__()
         if player.kind == "Archer":
             self.image = image.load('Art\Weapons\Arrow.png').convert()
-        elif player.kind == "Wizard":
-            self.image = image.load('Art\Weapons\spell.png').convert()
+        elif self.kind == "Wizard":
+            player.image = image.load('Art\Weapons\spell.png').convert()
         self.image.set_colorkey((255,255,255))
         self.x = x #Inital pos x
         self.y = y #Inital pos y
@@ -596,18 +587,7 @@ Offsets the arrow depending on where the player is moving (faster if player is m
         screen.blit(self.display,(self.rect[0],self.rect[1]))
         
     def update(self,cx,cy,enemyArrows,enemyList,key):
-        if self.kind == 'Spell' or self.kind == 'Arrow':
-            for enemy in enemyList:
-                if self.rect.colliderect(enemy.rect):
-                    player.bullets.remove(self)
-                    enemy.health -= player.damage
-            if -50<= self.x <= 1074 and -50<= self.y <= 750:
-                self.speed(key)
-            else:
-                group.remove(self)
-                
-        elif self.kind == 'FollowArrow':
-            player.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)
+        if self.kind == 'Spell' or self.kind == 'Arrow':    #Basic attacks
             for enemy in enemyList:
                 if self.rect.colliderect(enemy.rect):
                     player.bullets.remove(self)
@@ -617,6 +597,17 @@ Offsets the arrow depending on where the player is moving (faster if player is m
             else:
                 group.remove(self)
 
+#Skills and more complex projectiles
+        elif self.kind == 'PoisonArrow':    
+            self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)
+            for enemy in enemyList:
+                if self.rect.colliderect(enemy.rect):
+                    player.bullets.remove(self)
+                    enemy.poisoned.append(enemy)
+            if -50<= self.x <= 1074 and -50<= self.y <= 750:
+                self.speed(key)
+            else:
+                group.remove(self)
             
         elif self.kind == 'BigBullet':
             for enemy in enemyList:
@@ -1183,7 +1174,7 @@ while running:
                 mode = 1
                 #Archer
                 #health, stamina, mana, inventory, currentWeapon, currentArmour, currentBoots, money, kind, damage, defense, hotbar
-                player = Player(50,100,20,[[],[],[]],Weapons('Old Bow','A REALLY bad bow',5,'Art\Weapons\Bows\Bow0.png',1,'Bow'),Armour('Bob2','Bob2',0.10,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Archer',10,0.1,["Sniper","FollowMe","RadiusBarrage"])
+                player = Player(50,100,20,[[],[],[]],Weapons('Old Bow','A REALLY bad bow',5,'Art\Weapons\Bows\Bow0.png',1,'Bow'),Armour('Bob2','Bob2',0.10,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Archer',10,0.1,["PoisonArrow","","RadiusBarrage"])
                 back_x,back_y = 0,0
                 mixer.music.stop()
                 
