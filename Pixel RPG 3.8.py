@@ -11,9 +11,9 @@ init()
 ##### FOLLOW ME SKILL #### 
 
 ################# KNOWN BUGS ########################
-#Turtle multiply by 0.5 !!!!
 # ADD A SPRITE FOR SHADOW SKILL
 #ADD A SPRITE FOR POISON (ON THE PLAYER AND POISONED ENEMY)
+#HAVE TO ADD WEIRD VALUES TO SHOOT PROJECTILES IN MOUSE DIRECITON
 ####################################################
 
 ################# CHANGES ########################
@@ -24,6 +24,7 @@ init()
 #Ln 1072 - Fixed click so that projectile isn't created with any click
 #Replaced old arrow images with better one
 #Added poisonArrow.png and improved the image.load system in projectile class
+#USE MY IMAGES SO THAT THE SPRITE ORDER REMAINS FIXED
 ####################################################
 #=================================================== Classes ===================================================#
 
@@ -99,17 +100,18 @@ class Player(sprite.Sprite):
         self.coolDown = [False,False,False] #used to count cooldown time
         self.ang = 0
 
-        self.skillSprites = []   #2D list of sprites
+        self.skillSprites = []   #2D list of the skill sprites
         if self.kind == "Wizard": #loading images based on what character is chosen (Skill sprites)
             self.skillSprites.append(glob.glob("Art/Skills/skillFire/*.png")) #0
             self.skillSprites.append(glob.glob("Art/Skills/skillRing/*.png")) #1
             self.skillSprites.append(glob.glob("Art/Skills/skillTurtle/*.png")) #2
             self.skillSprites.append(glob.glob("Art/Skills/Totems/*.png")) #3
             self.skillSprites.append(glob.glob("Art/Skills/skillBoost/*.png")) #4
-            self.skillSprites.append(glob.glob("Art/Skills/skillHeal/*.png")) #4
+            self.skillSprites.append(glob.glob("Art/Skills/skillHeal/*.png")) #5
         elif self.kind == "Archer":
             self.skillSprites.append(glob.glob("Art/Skills/skillSniper/*.png")) #0
             self.skillSprites.append(glob.glob("Art/Skills/skillForestGump/*.png")) #1
+            self.skillSprites.append(glob.glob("Art/Skills/skillFear/*.png")) #2
                
         for i in range(0,len(self.skillSprites)):
             for x in range(0,len(self.skillSprites[i])):
@@ -155,6 +157,7 @@ class Player(sprite.Sprite):
         else:
             self.pos = 0
         self.image = self.animations[self.movepos][int(self.pos)]
+        
         
     def leveling(self): #Increases level of player after he has gotten 100 xp and increases stats randomly
         if self.xp<90:
@@ -234,17 +237,17 @@ class Player(sprite.Sprite):
     def statReset(self, health, mana,stamina, damage, defense, speed):
         'Resets the stats to normal after using a stat changing skill'
         if health != None:
-            player.health = health
+            self.health = health
         if mana != None:
-            player.mana = mana
+            self.mana = mana
         if stamina != None:
-            player.stamina = stamina
+            self.stamina = stamina
         if damage != None:
-            player.damage = damage
+            self.damage = damage
         if defense != None:
-            player.defense = defense
+            self.defense = defense
         if speed != None:
-            player.speed = speed
+            self.speed = speed
     
     def skillUse(self, skillFlag, attack, spriteCount, enemyList):   #skillFlag is taken in as a parameter using MOUSEBUTTONDOWN and attack keeps track if a skill is being used (no animation cut off or skill change while attack == True)
         if player.kind == "Wizard":
@@ -259,8 +262,7 @@ class Player(sprite.Sprite):
                         spriteCount +=0.5
                     else:
                         spriteCount = 0
-                        attack = False
-                    
+                        attack = False                    
             if self.health > self.maxhealth:    #prevents overhealing
                 self.health = self.maxhealth
                 
@@ -344,7 +346,7 @@ class Player(sprite.Sprite):
                         self.health -= 0.5
                     if mb[0] == 1:
                         #add to projectile list as a bullet and shoot it!
-                        self.ang = atan2(mx - self.x, my - self.y)
+                        self.ang = atan2(mx - self.x, my - self.y) + 3*pi/2
                         self.bullets.add(Projectile(self.x, self.y, 10*cos(-self.ang), 10*sin(-self.ang), self.ang, int(spriteCount), 'BigBullet'))
                         attack = False            
                 else:
@@ -414,15 +416,35 @@ class Player(sprite.Sprite):
                     self.mana -= 10
                     self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)   #have to offset with weird values for some reason
                     self.bullets.add(Projectile(self.x, self.y, 10*cos(-self.ang), 10*sin(-self.ang), -self.ang, None, 'PoisonArrow'))
-                    
-                        
-                       
+
+            elif self.hotbar[self.currentSkill] == "FollowMe":
+                if skillFlag and self.mana >= 30 and attack == False:
+                    self.mana -= 10
+                    self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)   #have to offset with weird values for some reason
+                    self.bullets.add(Projectile(self.x, self.y, 10*cos(-self.ang), 10*sin(-self.ang), -self.ang, None, 'FollowBullet'))
+
+            elif self.hotbar[self.currentSkill] == "Fear":
+                 if skillFlag and self.mana > 10 and attack == False:
+                    self.mana -= 10
+                    attack = True
+                 if attack:
+                    if spriteCount < len(self.skillSprites[2]):
+                        sprite = screen.blit(self.skillSprites[2][int(spriteCount)],(self.x - self.skillSprites[2][int(spriteCount)].get_width()/2,  self.y - self.skillSprites[2][int(spriteCount)].get_height()/2))
+                        spriteCount += 0.7
+                        for i in enemyList:
+                            if sprite.colliderect(i.rect):
+                                if i.speed > 0:
+                                    i.speed *= -1  #makes enemies run away in fear
+                    else: 
+                        spriteCount = 0
+                        attack = False
+                                             
             elif self.hotbar[self.currentSkill] == "ForestGump":
                 if skillFlag and self.mana >= 15 and attack == False:
                     self.mana -= 15
                     timer = Timer(10.0 , self.statReset, [None, None, self.stamina, self.damage, None, None])    #health, mana,stamina, damage, defense, speed
                     self.damage /= 2
-                    self.stamina += 9999    #TESTED, it is impossible to use all that stamina 
+                    self.stamina += 9999    #Tested, it is impossible to use all that stamina 
                     timer.start()   
                     attack = True
                 if attack:
@@ -433,10 +455,25 @@ class Player(sprite.Sprite):
                         spriteCount = 0
                         attack  = False
 
-
+        elif self.kind == "Knight":
+            if self.hotbar[self.currentSkill] == "Block":
+                print(self.defense)
+                old = self.defense
+                if mb[2] == 1 and self.mana >= 0.1:
+                    self.mana -= 0.1
+                    self.vx = 0
+                    self.vy = 0
+                    self.defense = 9999
+                else:
+                    self.defense = old
+                    
+                
+                    
+                    
+            
         return attack, spriteCount  #returning so that the last known value of attack and spriteCount can be reused
 
-    def fillMap(self,back_x,back_y,backPic):
+    def fillMap(self, back_x, back_y, backPic):
         draw.circle(self.mapFog,(255,0,0),(int((self.x-back_x)/backPic.get_width()*900),int((self.y-back_y)/backPic.get_height()*600)),100)
         
     def update(self,flag,mx,my,key,surf,surf2,enemies,cx,cy,directions,backPic): #Draws the player and calls most of the functions before it
@@ -447,7 +484,7 @@ class Player(sprite.Sprite):
         self.changePic()
         self.sprint(key)
         self.rect[0],self.rect[1] = self.x-self.image.get_width()/2,self.y-self.image.get_height()/2
-        screen.blit(self.image,self.rect)   #(screen,(255,0,0),self.rect)
+        screen.blit(self.image,self.rect)  #(screen,(255,0,0),self.rect) 
         self.bullets.update(cx,cy,None,enemies,key)
         self.HUD(surf)
         self.drawSkillBar(surf2)
@@ -484,6 +521,21 @@ class Enemy(sprite.Sprite):
         self.bullets = sprite.Group()
         self.angle = None
         self.poisoned = []
+
+    def statReset(self,health, mana,stamina, damage, defense, speed):
+        'Resets the stats to normal after using a stat changing skill'
+        if health != None:
+            self.health = health
+        if mana != None:
+            self.mana = mana
+        if stamina != None:
+            self.stamina = stamina
+        if damage != None:
+            self.damage = damage
+        if defense != None:
+            self.defense = defense
+        if speed != None:
+            self.speed = speed
 
     def createProjectile(self):
         centx = self.rect[0]+self.rect[2]/2 #x coord of starting pos for arrow
@@ -562,11 +614,10 @@ class Projectile(sprite.Sprite):
         else:
             if player.kind == "Archer":
                 self.image = image.load('Art\Weapons\Arrow.png').convert()
-            elif player.kind == "Wizard":
-                player.image = image.load('Art\Weapons\spell.png').convert()  
+            elif player.kind == "Wizard" or player.kind == "Knight":
+                self.image = image.load('Art\Weapons\spell.png').convert()  
         self.image.set_colorkey((255,255,255))
-        
-        
+
         self.display = transform.rotate(self.image,degrees(-self.angle))
         if self.kind == 'BigBullet':
             self.display = transform.scale(self.display,(bigBulletSize*5,bigBulletSize*5))
@@ -615,8 +666,20 @@ Offsets the arrow depending on where the player is moving (faster if player is m
                 self.speed(key)
             else:
                 group.remove(self)
-            
+                
         elif self.kind == 'BigBullet':
+            self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)
+            for enemy in enemyList:
+                if self.rect.colliderect(enemy.rect):
+                    player.bullets.remove(self)
+                    enemy.health -= player.damage*self.rect[2]
+            if -50<= self.x <= 1074 and -50<= self.y <= 750:
+                self.speed(key)
+            else:
+                group.remove(self)
+        elif self.kind == 'FollowBullet':
+            print(group)
+            self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)
             for enemy in enemyList:
                 if self.rect.colliderect(enemy.rect):
                     player.bullets.remove(self)
@@ -628,7 +691,6 @@ Offsets the arrow depending on where the player is moving (faster if player is m
         else:
             if self.rect.colliderect(player.rect):
                 enemyArrows.remove(self)
-                player.projectileHit = True
             elif -50<= self.x <= 1074 and -50<= self.y <= 750:
                 self.speed(key)
             else:
@@ -1163,7 +1225,7 @@ while running:
                 mode = 1
                 #knight
                 #health, stamina, mana, inventory, currentWeapon, currentArmour, currentBoots, money, kind, damage, defense, hotbar
-                player = Player(100,100,20,[[],[],[]],Weapons('Rusty Sword','A REALLY bad sword',5,'Art\Weapons\swords\sword1.png',1,'Sword'),Armour('Bob2','Bob2',0.01,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Knight',10,0.1,["Heal","Fire","Ring"])
+                player = Player(100,100,20,[[],[],[]],Weapons('Rusty Sword','A REALLY bad sword',5,'Art\Weapons\swords\sword1.png',1,'Sword'),Armour('Bob2','Bob2',0.01,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Knight',10,0.1,["Block","",""])
                 back_x,back_y = 0,0
                 mixer.music.stop()
                 
@@ -1172,7 +1234,7 @@ while running:
                 mode = 1
                 #Wizard
                 #health, stamina, mana, inventory, currentWeapon, currentArmour, currentBoots, money, kind, damage, defense, hotbar
-                player = Player(50,100,20,[[],[],[]],Weapons('Old Staff','A REALLY bad staff',5,'Art\Weapons\Staffs\staff1.png',1,'Staff'),Armour('Bob2','Bob2',0.10,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Wizard',10,0.1,["Sniper","Fire","Charge"])
+                player = Player(50,100,20,[[],[],[]],Weapons('Old Staff','A REALLY bad staff',5,'Art\Weapons\Staffs\staff1.png',1,'Staff'),Armour('Bob2','Bob2',0.10,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Wizard',10,0.1,["Ring","Fire","Charge"])
                 back_x,back_y = 0,0
                 mixer.music.stop()
                 
@@ -1181,7 +1243,7 @@ while running:
                 mode = 1
                 #Archer
                 #health, stamina, mana, inventory, currentWeapon, currentArmour, currentBoots, money, kind, damage, defense, hotbar
-                player = Player(50,100,20,[[],[],[]],Weapons('Old Bow','A REALLY bad bow',5,'Art\Weapons\Bows\Bow0.png',1,'Bow'),Armour('Bob2','Bob2',0.10,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Archer',10,0.1,["PoisonArrow","","RadiusBarrage"])
+                player = Player(50,100,20,[[],[],[]],Weapons('Old Bow','A REALLY bad bow',5,'Art\Weapons\Bows\Bow0.png',1,'Bow'),Armour('Bob2','Bob2',0.10,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Archer',10,0.1,["FollowMe","Fear","RadiusBarrage"])
                 back_x,back_y = 0,0
                 mixer.music.stop()
                 
