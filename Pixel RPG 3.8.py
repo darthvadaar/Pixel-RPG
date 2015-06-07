@@ -112,6 +112,8 @@ class Player(sprite.Sprite):
             self.skillSprites.append(glob.glob("Art/Skills/skillSniper/*.png")) #0
             self.skillSprites.append(glob.glob("Art/Skills/skillForestGump/*.png")) #1
             self.skillSprites.append(glob.glob("Art/Skills/skillFear/*.png")) #2
+        elif self.kind == "Knight":
+            self.skillSprites.append(glob.glob("Art/Skills/skillBomb/*.png")) #0
                
         for i in range(0,len(self.skillSprites)):
             for x in range(0,len(self.skillSprites[i])):
@@ -248,7 +250,7 @@ class Player(sprite.Sprite):
             self.defense = defense
         if speed != None:
             self.speed = speed
-    
+
     def skillUse(self, skillFlag, attack, spriteCount, enemyList):   #skillFlag is taken in as a parameter using MOUSEBUTTONDOWN and attack keeps track if a skill is being used (no animation cut off or skill change while attack == True)
         if player.kind == "Wizard":
             if self.hotbar[self.currentSkill] == "Heal":    #adds 20% of maxhealth to health
@@ -457,17 +459,35 @@ class Player(sprite.Sprite):
 
         elif self.kind == "Knight":
             if self.hotbar[self.currentSkill] == "Block":
-                print(self.defense)
-                old = self.defense
-                if mb[2] == 1 and self.mana >= 0.1:
-                    self.mana -= 0.1
-                    self.vx = 0
-                    self.vy = 0
+                if skillFlag and self.mana >= 5:
+                    self.mana -= 5
+                    timer = Timer(5.0, self.statReset, [None, None, None, None, self.defense, None]) #health, mana,stamina, damage, defense, speed
+                    self.speed = 0  #player will not move once merged with rishis code
+                    timer.start()
                     self.defense = 9999
-                else:
-                    self.defense = old
-                    
-                
+            elif self.hotbar[self.currentSkill] == "Rambo":
+                if skillFlag and self.mana >= 10:
+                    self.mana -= 10
+                    timer = Timer(10.0, self.statReset, [self.health, None, None, None, self.damage, None]) #health, mana,stamina, damage, defense, speed
+                    self.health = 9999
+                    #self.speed *= 0.25
+                    self.damage *= 0.25
+                    timer.start()
+                    self.defense = 9999
+            elif self.hotbar[self.currentSkill] == "Bomb":
+                if skillFlag and self.mana >= 15:
+                    self.mana -= 15
+                    attack = True
+                if attack:
+                    if spriteCount < len(self.skillSprites[0]):
+                        sprite = screen.blit(self.skillSprites[0][spriteCount],(self.x - self.skillSprites[0][spriteCount].get_width()/2 , self.y - self.skillSprites[0][spriteCount].get_height()/2))
+                        spriteCount += 1
+                        for i in enemyList:
+                            if sprite.colliderect(i.rect):
+                                i.health -= self.damage + 10
+                    else:
+                        spriteCount = 0
+                        attack = False
                     
                     
             
@@ -678,7 +698,6 @@ Offsets the arrow depending on where the player is moving (faster if player is m
             else:
                 group.remove(self)
         elif self.kind == 'FollowBullet':
-            print(group)
             self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)
             for enemy in enemyList:
                 if self.rect.colliderect(enemy.rect):
@@ -1225,7 +1244,7 @@ while running:
                 mode = 1
                 #knight
                 #health, stamina, mana, inventory, currentWeapon, currentArmour, currentBoots, money, kind, damage, defense, hotbar
-                player = Player(100,100,20,[[],[],[]],Weapons('Rusty Sword','A REALLY bad sword',5,'Art\Weapons\swords\sword1.png',1,'Sword'),Armour('Bob2','Bob2',0.01,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Knight',10,0.1,["Block","",""])
+                player = Player(100,100,20,[[],[],[]],Weapons('Rusty Sword','A REALLY bad sword',5,'Art\Weapons\swords\sword1.png',1,'Sword'),Armour('Bob2','Bob2',0.01,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Knight',10,0.1,["Block","Rambo","Bomb"])
                 back_x,back_y = 0,0
                 mixer.music.stop()
                 
