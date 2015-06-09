@@ -11,7 +11,6 @@ init()
 
 
 ################# TO DO ########################
-#Turtle skill basically does nothing because enemy.speed is not connected to the enemy speed in any way ** FIX THIS RISHI **
 #Basic AI
 #Boss Integration
 #Fix enemy movement 
@@ -19,19 +18,6 @@ init()
 ####################################################
 
 ################# CHANGES ########################
-#Added confusion attribute
-#Added confusion, slow trap and drawTraps functions
-#Changed charge in skill use
-#Changed attacking function in player
-#Added mx,my parameters for skillUse
-#Changed the way arrows are made for the wizard to improve accuracy
-#Arrows dissappear when colliding with walls
-#Changed wallCol function
-#Added a bunch of attributes to player
-#Changed collision points for player
-#Added enemy.speed and use it
-#CHange mouse button for firing arrows (all fire arrows)
-#added added wallcol to enemies
 
 ####################################################
 #=================================================== Classes ===================================================#
@@ -289,7 +275,7 @@ class Player(sprite.Sprite):
             elif key[K_3] == 1:
                 self.currentSkill = 2
                 
-    def statReset(self, health, mana,stamina, damage, defense, speed, confused):
+    def statReset(self, health, mana, stamina, damage, defense, speed, confused):
         'Resets the stats to normal after using a stat changing skill'
         if health != None:
             player.health = health
@@ -345,7 +331,7 @@ class Player(sprite.Sprite):
                             if sprite.colliderect(i.rect):
                                 i.health -= self.damage + 10 #subtracts the enemy health by your damage
                         
-            elif self.hotbar[self.currentSkill] == "Ring":  #Area attack - attacks all enemies in vicinity
+            elif self.hotbar[self.currentSkill] == "Ring":  
                 if skillFlag and self.mana > 10 and attack == False:
                     player.mana -= 15
                     attack = True
@@ -360,13 +346,13 @@ class Player(sprite.Sprite):
                         spriteCount = 0
                         attack = False
                                              
-            elif self.hotbar[self.currentSkill] == "Boost" : #self.attack *= 2 and self.defense /= 2
+            elif self.hotbar[self.currentSkill] == "Boost" :
                 if skillFlag and self.mana > 5 and attack == False:                    
                     self.mana -= 5
-                    timer = Timer(10.0 , self.statReset, [None, None, None, self.damage, self.defense,None, None])    #takes old stats and creates a timer
+                    timerBoost = Timer(10.0 , self.statReset, [None, None, None, self.damage, self.defense,None, None])    #takes old stats and creates a timer
                     self.damage *= 2
                     self.defense /= 2
-                    timer.start()    #starts the timer and runs self.statReset once timer is finished.
+                    timerBoost.start()    #starts the timer and runs self.statReset once timer is finished.
                     attack = True
                 if attack:
                     if spriteCount < 16:
@@ -386,7 +372,7 @@ class Player(sprite.Sprite):
                         spriteCount += 0.7  #only go up by 0.7 frames every time to reduce super fast animations
                         for i in enemyList:
                             if sprite.colliderect(i.rect):
-                                i.speed *= 0.5  #reduces enemy speed by half
+                                i.speed *= 0.9
                     else: 
                         spriteCount = 0
                         attack = False
@@ -499,10 +485,10 @@ class Player(sprite.Sprite):
             elif self.hotbar[self.currentSkill] == "ForestGump":
                 if skillFlag and self.mana >= 15 and attack == False:
                     self.mana -= 15
-                    timer = Timer(10.0 , self.statReset, [None, None, self.stamina, self.damage, None, None,  None])    #health, mana,stamina, damage, defense, speed
+                    timerForestGump = Timer(10.0 , self.statReset, [None, None, self.stamina, self.damage, None, None,  None])    #health, mana,stamina, damage, defense, speed
                     self.damage /= 2
                     self.stamina += 9999    #Tested, it is impossible to use all that stamina 
-                    timer.start()   
+                    timerForestGump.start()   
                     attack = True
                 if attack:
                     if spriteCount < 16:
@@ -516,19 +502,18 @@ class Player(sprite.Sprite):
             if self.hotbar[self.currentSkill] == "Block":
                 if skillFlag and self.mana >= 5:
                     self.mana -= 5
-                    timer = Timer(5.0, self.statReset, [None, None, None, None, self.defense, None, None]) #health, mana,stamina, damage, defense, speed
+                    timerBlock = Timer(5.0, self.statReset, [None, None, None, None, self.defense, None, None]) #health, mana,stamina, damage, defense, speed
                     self.speed = 0  #player will not move once merged with rishis code
-                    timer.start()
+                    timerBlock.start()
                     self.defense = 9999
             elif self.hotbar[self.currentSkill] == "Rambo":
+                print(self.health, self.damage)
                 if skillFlag and self.mana >= 10:
                     self.mana -= 10
-                    timer = Timer(10.0, self.statReset, [self.health, None, None, None, self.damage, None, None]) #health, mana,stamina, damage, defense, speed
-                    self.health = 9999
-                    #self.speed *= 0.25
-                    self.damage *= 0.25
-                    timer.start()
-                    self.defense = 9999
+                    timerRambo = Timer(3.0, self.statReset, [self.health, None, None, None, self.damage, None, None]) #health, mana,stamina, damage, defense, speed
+                    self.health = 999999
+                    self.damage /= 10
+                    timerRambo.start()
             elif self.hotbar[self.currentSkill] == "Bomb":
                 if skillFlag and self.mana >= 15:
                     self.mana -= 15
