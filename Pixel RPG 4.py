@@ -8,17 +8,23 @@ from os.path import isfile, join
 import glob
 from threading import Timer
 init()
+##### FOLLOW ME SKILL #### 
 
-
-################# TO DO ########################
-#Basic AI
-#Boss Integration
-#Fix enemy movement 
-#Create enemy to 
+################# KNOWN BUGS ########################
+# ADD A SPRITE FOR SHADOW SKILL
+#ADD A SPRITE FOR POISON (ON THE PLAYER AND POISONED ENEMY)
+#HAVE TO ADD WEIRD VALUES TO SHOOT PROJECTILES IN MOUSE DIRECITON
 ####################################################
 
 ################# CHANGES ########################
-
+#Added new archer skills
+#added self.ang and calculated self.ang in fire skill early so that blit does not change while attack = True
+#changed colour scheme for the HUD Components
+#added projectiles for archer and updated the Projectile Class (if self.kind == "Arrow")
+#Ln 1072 - Fixed click so that projectile isn't created with any click
+#Replaced old arrow images with better one
+#Added poisonArrow.png and improved the image.load system in projectile class
+#USE MY IMAGES SO THAT THE SPRITE ORDER REMAINS FIXED
 ####################################################
 #=================================================== Classes ===================================================#
 
@@ -31,13 +37,12 @@ class Player(sprite.Sprite):
         self.moving = False #Flag if the player is moving (used to for animations and sprint)
 
         self.kind = kind
-        
         self.skillSprites = []   #2D list of the skill sprite
         if self.kind == 'Knight':
             self.animations = [[image.load('Art\Player\Knight\Player%d%d.png' %(x,y)).convert_alpha() for y in range(5)] for x in range(4)]
             self.skillicons=glob.glob("Art\Skillicons\Knight\*.png")
             self.skillSprites.append(glob.glob("Art/Skills/skillBomb/*.png")) #0
-        elif self.kind == 'Wizard':
+        if self.kind == 'Wizard':
             self.animations = [[image.load('Art\Player\Wizard\Player%d%d.png' %(x,y)).convert_alpha() for y in range(3)] for x in range(4)]
             self.skillicons=glob.glob("Art\Skillicons\Wizard\*.png")
             self.skillSprites.append(glob.glob("Art/Skills/skillFire/*.png")) #0
@@ -46,25 +51,24 @@ class Player(sprite.Sprite):
             self.skillSprites.append(glob.glob("Art/Skills/Totems/*.png")) #3
             self.skillSprites.append(glob.glob("Art/Skills/skillBoost/*.png")) #4
             self.skillSprites.append(glob.glob("Art/Skills/skillHeal/*.png")) #5
-        elif self.kind == 'Archer':
+        if self.kind == 'Archer':
             self.animations = [[image.load('Art\Player\Archer\Player%d%d.png' % (x,y)).convert_alpha() for y in range(3)] for x in range(4)]
-            self.skillicons = glob.glob("Art\Skillicons\Archer\*.png")
+            self.skillicons=glob.glob("Art\Skillicons\Archer\*.png")
             self.skillSprites.append(glob.glob("Art/Skills/skillSniper/*.png")) #0
             self.skillSprites.append(glob.glob("Art/Skills/skillForestGump/*.png")) #1
             self.skillSprites.append(glob.glob("Art/Skills/skillFear/*.png")) #2
 
-        for i in range(0,len(self.skillSprites)):   #Turn all the globbed images into surfaces
+        for i in range(0,len(self.skillSprites)):
             for x in range(0,len(self.skillSprites[i])):
                 self.skillSprites[i][x] = image.load(self.skillSprites[i][x])
         for i in range(0,len(self.skillicons)):
             self.skillicons[i] = image.load(self.skillicons[i])
-
         self.movepos = 0 #Is the player facing forward, left, right or down
         self.pos = 0 #The current pic of the animation (animation depends on movepos value)
         self.image = self.animations[self.movepos][self.pos]
         
-        self.x = 500#screen.get_width()/2+self.image.get_width()/2
-        self.y = 340#308+self.image.get_height()/2
+        self.x = screen.get_width()/2+self.image.get_width()/2
+        self.y = 308+self.image.get_height()/2
         self.image.set_colorkey((255,255,255))
         self.rect = Rect(screen.get_width()/2/2,308,self.image.get_width(),self.image.get_height())
 
@@ -73,8 +77,7 @@ class Player(sprite.Sprite):
             self.sword.set_colorkey((255,255,255))
             self.swordRect = self.sword.get_rect()
             
-        elif self.kind == 'Wizard' or self.kind == "Archer":
-            self.bullets = sprite.Group()
+        self.bullets = sprite.Group()
         
         self.level = 1
         self.xp = 0
@@ -96,8 +99,6 @@ class Player(sprite.Sprite):
 
         self.damage = damage
         self.defense = defense
-        self.speeds = [(0,5),(-5,0),(5,0),(0,-5)]
-        self.confused = False
 
         self.inventory = inventory
         self.currentWeapon = currentWeapon
@@ -116,67 +117,27 @@ class Player(sprite.Sprite):
         self.currentSkill = 0 #counter for which skill is selected in the hotbar list
         self.AIignore = False   #used for the shadow skill...will not update enemy AI if True
         self.coolDown = [False,False,False] #used to count cooldown time
-        self.siphoning = False #checks if the siphoning skill is True or False
+        self.ang = 0
+
+               
+        
+        
 
     def sprint(self,key): #Changes players speed depending on if the shift button is pressed and their current stamina
-        if key[K_LSHIFT] == 1 and self.moving and self.stamina>0:
-            self.stamina -= 1
-            self.vx *= 2
-            self.vy *= 2
-        elif self.stamina<self.maxstamina:
-            self.stamina += 0.25
-            
-    def findMoveType(self,back,back_x,back_y):
-            if 495 <= self.x+self.vx <= 505:
-                self.pmovex = False
-            
-            if back_x < -back.get_width()+screen.get_width() or back_x > 0:
-                if back_x > 0:
-                    back_x = 0
+        if key[K_LSHIFT] == 1:
+            if self.moving:
+                if self.stamina>0:
+                    self.stamina -= 1
+                    self.vx,self.vy = 10,10
                 else:
-                    back_x = -back.get_width()+screen.get_width()
-                self.pmovex = True
-
-            if 330 <= self.y+self.vy <= 345:
-                self.pmovey = False
-                
-            if back_y < -back.get_height()+screen.get_height() or back_y > 0:
-                if back_y > 0:
-                    back_y = 0
-                else:
-                    back_y = -back.get_height()+screen.get_height()
-                self.pmovey = True
-            
-            return back_x,back_y
-        
-    def movement(self,directions,back,back_mask,back_x,back_y,key):
-        self.vx,self.vy = 0,0
-        self.moving = False
-        for direction in range(len(directions)):
-            if 1 in directions[direction]:
-                self.movepos = direction
-                if True not in wallCol(back_mask,self.collidePoints[direction],back_x,back_y):
-                    self.moving = True
-                    self.vx += self.speeds[direction][0]
-                    self.vy += self.speeds[direction][1]
-                    
-        self.sprint(key)
-        if self.vx != 0 and self.vy != 0:
-            self.vx = self.vx*cos(radians(45))
-            self.vy = self.vy*sin(radians(45))
-        elif self.vx == 0 and self.vy == 0:
-            self.moving = False
-
-        if self.pmovex:
-            self.x += self.vx
+                    self.stamina = 0
+                    self.vx,self.vy = 5,5
+                if self.stamina<self.maxstamina:
+                    self.stamina += 0.15
         else:
-            back_x -= self.vx
-            
-        if self.pmovey:
-            self.y += self.vy
-        else:
-            back_y -= self.vy
-        return self.findMoveType(back,back_x,back_y)
+            self.vx,self.vy = 5,5
+            if self.stamina<self.maxstamina:
+                self.stamina += 0.25
 
     def drawSkillBar(self,surf): #Draws the skill selection bar at the bottom of the screen
         screen.blit(surf,(0,615))
@@ -205,6 +166,7 @@ class Player(sprite.Sprite):
             self.pos = 0
         self.image = self.animations[self.movepos][int(self.pos)]
         
+        
     def leveling(self): #Increases level of player after he has gotten 100 xp and increases stats randomly
         if self.xp<90:
             self.xp += 10
@@ -226,40 +188,40 @@ class Player(sprite.Sprite):
         Please correct and make it more efficent/organized
         Draws a sword to be lined with the mouse. There are two points (the tip of sword and middle of sword) that are used to damage enemies
         If an enemy collides with either point it takes damage.
-        '''   
-        x = mx-self.x #Distance from center to mouse horizontally
-        y = my-self.y #Distance from center to mouse vertically
+        '''
+        
+        centx = self.rect[0]+self.rect[2]/2 #Center of player horizontally
+        centy = self.rect[1]+self.rect[3]/2 #Center of player vertically
+        
+        x = mx-centx #Distance from center to mouse horizontally
+        y = my-centy #Distance from center to mouse vertically
         
         h = hypot(x,y) #Actual distance from mouse to center (pythag theorem)
         ax = 40/h*x #Find the horizonatal distance for a smilar triangle with hypot 40
         ay = 40/h*y #Find the vertical distance for a smilar triangle with hypot 40
         
-        angle = atan2(ay,ax) #Angle used to rotate sword
+        angle = -atan2(ay,ax) #Angle used to rotate sword
         
         if self.kind == 'Knight':
-            display = transform.rotate(self.sword,degrees(-angle)) #Rotate a copy sword with the angle we calculated
-            screen.blit(display,(self.x-display.get_width()//2,self.y-display.get_height()//2)) #Blit the image with the offset
+            display = transform.rotate(self.sword,degrees(angle)) #Rotate a copy sword with the angle we calculated
+            screen.blit(display,(centx-display.get_width()//2,centy-display.get_height()//2)) #Blit the image with the offset
+            
             for enemy in enemies:
-                if enemy.rect.collidepoint(int(self.x+ax),int(self.y+ay)) or enemy.rect.collidepoint(int(self.x+ax*2/3),int(self.y+ay*2/3)) or enemy.rect.collidepoint(int(self.x+ax/3),int(self.y+ay/3)):
+                if enemy.rect.collidepoint(int(centx+ax),int(centy+ay)) or enemy.rect.collidepoint(int(centx+ax*2/3),int(centy+ay*2/3)) or enemy.rect.collidepoint(int(centx+ax/3),int(centy+ay/3)):
                     enemy.hurt = True
                     #enemy.health -= 50
         elif self.kind == 'Wizard':
-            self.bullets.add(Projectile(self.x,self.y,10*cos(angle),10*sin(angle),angle,None,'Spell'))
-        elif self.kind == "Archer":
-            self.bullets.add(Projectile(self.x,self.y,10*cos(angle),10*sin(angle),angle,None,'Arrow'))
+            self.bullets.add(Projectile(centx,centy,10*cos(-angle),10*sin(-angle),-angle,None,'Spell'))
+        elif self.kind == 'Archer':
+            self.bullets.add(Projectile(centx,centy,10*cos(-angle),10*sin(-angle),-angle,None,'Arrow'))
             
     def takeDamage(self,enemies): #Checks if the player is touching an enemy and lowers the players health if it is
         if self.health <= 0:
             self.health = 0
         for enemy in enemies:
             if self.rect.colliderect(enemy.rect):
-                if self.health > 0 and self.siphoning == False:
-                    #self.x,self.y = knockBack(self.x,self.y,10,enemy.angle)
+                if self.health>0:
                     self.health -= (1-player.defense-player.currentArmour.defense-player.currentBoots.defense)*enemy.damage
-                    return True
-                elif self.health < self.maxhealth and self.siphoning:
-                    #self.x,self.y = knockBack(self.x,self.y,10,enemy.angle)
-                    self.health += (1-player.defense-player.currentArmour.defense-player.currentBoots.defense)*enemy.damage
                     return True
         if self.projectileHit:
             self.health -= (1-player.defense-player.currentArmour.defense-player.currentBoots.defense)*randint(7,10)
@@ -280,7 +242,7 @@ class Player(sprite.Sprite):
             elif key[K_3] == 1:
                 self.currentSkill = 2
                 
-    def statReset(self, health, mana, stamina, damage, defense, speed, confused, siphoning):
+    def statReset(self, health, mana,stamina, damage, defense, speed):
         'Resets the stats to normal after using a stat changing skill'
         if health != None:
             self.health = health
@@ -293,12 +255,8 @@ class Player(sprite.Sprite):
         if defense != None:
             self.defense = defense
         if speed != None:
-            self.speeds = speed
-        if confused != None:
-            self.confused = confused
-        if siphoning != None:
-            self.siphoning = siphoning
-    
+            self.speed = speed
+
     def skillUse(self, skillFlag, attack, spriteCount, enemyList):   #skillFlag is taken in as a parameter using MOUSEBUTTONDOWN and attack keeps track if a skill is being used (no animation cut off or skill change while attack == True)
         if player.kind == "Wizard":
             if self.hotbar[self.currentSkill] == "Heal":    #adds 20% of maxhealth to health
@@ -338,7 +296,7 @@ class Player(sprite.Sprite):
                             if sprite.colliderect(i.rect):
                                 i.health -= self.damage + 10 #subtracts the enemy health by your damage
                         
-            elif self.hotbar[self.currentSkill] == "Ring":  
+            elif self.hotbar[self.currentSkill] == "Ring":  #Area attack - attacks all enemies in vicinity
                 if skillFlag and self.mana > 10 and attack == False:
                     player.mana -= 15
                     attack = True
@@ -353,13 +311,13 @@ class Player(sprite.Sprite):
                         spriteCount = 0
                         attack = False
                                              
-            elif self.hotbar[self.currentSkill] == "Boost" :
+            elif self.hotbar[self.currentSkill] == "Boost" : #self.attack *= 2 and self.defense /= 2
                 if skillFlag and self.mana > 5 and attack == False:                    
                     self.mana -= 5
-                    timerBoost = Timer(10.0 , self.statReset, [None, None, None, self.damage, self.defense,None, None])    #takes old stats and creates a timer
+                    timer = Timer(10.0 , self.statReset, [None, None, None, self.damage, self.defense,None])    #takes old stats and creates a timer
                     self.damage *= 2
                     self.defense /= 2
-                    timerBoost.start()    #starts the timer and runs self.statReset once timer is finished.
+                    timer.start()    #starts the timer and runs self.statReset once timer is finished.
                     attack = True
                 if attack:
                     if spriteCount < 16:
@@ -379,7 +337,7 @@ class Player(sprite.Sprite):
                         spriteCount += 0.7  #only go up by 0.7 frames every time to reduce super fast animations
                         for i in enemyList:
                             if sprite.colliderect(i.rect):
-                                i.speed *= 0.9
+                                i.speed -= 2  #reduces enemy speed by self.damage
                     else: 
                         spriteCount = 0
                         attack = False
@@ -417,7 +375,7 @@ class Player(sprite.Sprite):
         elif player.kind == "Archer":
             if self.hotbar[self.currentSkill] == "Sniper":
                 if skillFlag and self.mana > 30 and attack == False:
-                    self.mana -= 30
+                    self.mana -= 25
                     self.ang = degrees(atan2(mx - self.x, my - self.y)) + 180
                     attack = True
                 if attack:
@@ -438,8 +396,8 @@ class Player(sprite.Sprite):
                                 i.health -= self.damage + 25
                                 
             elif self.hotbar[self.currentSkill] == "Barrage":
-                if skillFlag and self.mana >= 10 and attack == False:
-                    self.mana -= 10
+                if skillFlag and self.mana >= 30 and attack == False:
+                    self.mana -= 30
                     attack = True
                     self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)   #have to offset with weird values for some reason
                 if attack:
@@ -450,8 +408,8 @@ class Player(sprite.Sprite):
                         attack = False
 
             elif self.hotbar[self.currentSkill] == "RadiusBarrage":
-                if skillFlag and self.mana >= 10 and attack == False:
-                    self.mana -= 10
+                if skillFlag and self.mana >= 30 and attack == False:
+                    self.mana -= 30
                     attack = True
                     self.ang = 0
                 if attack:
@@ -462,22 +420,16 @@ class Player(sprite.Sprite):
                         attack = False
 
             elif self.hotbar[self.currentSkill] == "PoisonArrow":
-                if skillFlag and self.mana >= 5 and attack == False:
-                    self.mana -= 5
+                if skillFlag and self.mana >= 30 and attack == False:
+                    self.mana -= 10
                     self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)   #have to offset with weird values for some reason
                     self.bullets.add(Projectile(self.x, self.y, 10*cos(-self.ang), 10*sin(-self.ang), -self.ang, None, 'PoisonArrow'))
 
             elif self.hotbar[self.currentSkill] == "FollowMe":
-                if skillFlag and self.mana >= 15 and attack == False:
-                    self.mana -= 15
+                if skillFlag and self.mana >= 30 and attack == False:
+                    self.mana -= 10
                     self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)   #have to offset with weird values for some reason
-                    attack = True
-                if attack:
-                    self.bullets.add(Projectile(self.x, self.y, 10*cos(-self.ang), 10*sin(-self.ang), -self.ang, None, 'HomingArrow'))
-                    spriteCount += 1
-                    if spriteCount > 20:
-                        spriteCount = 0
-                        attack = False
+                    self.bullets.add(Projectile(self.x, self.y, 10*cos(-self.ang), 10*sin(-self.ang), -self.ang, None, 'FollowBullet'))
 
             elif self.hotbar[self.currentSkill] == "Fear":
                  if skillFlag and self.mana > 10 and attack == False:
@@ -498,10 +450,10 @@ class Player(sprite.Sprite):
             elif self.hotbar[self.currentSkill] == "ForestGump":
                 if skillFlag and self.mana >= 15 and attack == False:
                     self.mana -= 15
-                    timerForestGump = Timer(10.0 , self.statReset, [None, None, self.stamina, self.damage, None, None,  None])
+                    timer = Timer(10.0 , self.statReset, [None, None, self.stamina, self.damage, None, None])    #health, mana,stamina, damage, defense, speed
                     self.damage /= 2
                     self.stamina += 9999    #Tested, it is impossible to use all that stamina 
-                    timerForestGump.start()   
+                    timer.start()   
                     attack = True
                 if attack:
                     if spriteCount < 16:
@@ -515,17 +467,19 @@ class Player(sprite.Sprite):
             if self.hotbar[self.currentSkill] == "Block":
                 if skillFlag and self.mana >= 5:
                     self.mana -= 5
-                    timerBlock = Timer(5.0, self.statReset, [None, None, None, None, self.defense, None, None])
+                    timer = Timer(5.0, self.statReset, [None, None, None, None, self.defense, None]) #health, mana,stamina, damage, defense, speed
                     self.speed = 0  #player will not move once merged with rishis code
-                    timerBlock.start()
+                    timer.start()
                     self.defense = 9999
             elif self.hotbar[self.currentSkill] == "Rambo":
                 if skillFlag and self.mana >= 10:
                     self.mana -= 10
-                    timerRambo = Timer(3.0, self.statReset, [None, None, None, self.damage, self.defense, None, None]) #health, mana, stamina, damage, defense, speed, confused
-                    self.defense = 999999
-                    self.damage /= 10
-                    timerRambo.start()
+                    timer = Timer(10.0, self.statReset, [self.health, None, None, None, self.damage, None]) #health, mana,stamina, damage, defense, speed
+                    self.health = 9999
+                    #self.speed *= 0.25
+                    self.damage *= 0.25
+                    timer.start()
+                    self.defense = 9999
             elif self.hotbar[self.currentSkill] == "Bomb":
                 if skillFlag and self.mana >= 15:
                     self.mana -= 15
@@ -540,64 +494,33 @@ class Player(sprite.Sprite):
                     else:
                         spriteCount = 0
                         attack = False
-            elif self.hotbar[self.currentSkill] == "Freeze":
-                if skillFlag and self.mana >= 10:
-                    self.mana -= 10
-                    timerFreeze = Timer(10.0, self.statReset, [None, None, None, self.damage, None, self.speeds, None]) #health, mana, stamina, damage, defense, speed, confused
-                    self.speeds = [(0,1),(-1,0),(1,0),(0,-1)]
-                    self.damage *= 2
-                    timerFreeze.start()
-
-            elif self.hotbar[self.currentSkill] == "Siphon":
-                print(self.siphoning)
-                if skillFlag and self.mana >= 10:
-                    self.mana -= 10
-                    timerSiphon = Timer(10.0, self.statReset, [None, None, None, None, None, None, None, False]) #health, mana, stamina, damage, defense, speed, confused
-                    self.siphoning = True
-                    timerSiphon.start()
-
                     
                     
+            
         return attack, spriteCount  #returning so that the last known value of attack and spriteCount can be reused
 
-    def fillMap(self,back_x,back_y,backPic):
+    def fillMap(self, back_x, back_y, backPic):
         draw.circle(self.mapFog,(255,0,0),(int((self.x-back_x)/backPic.get_width()*900),int((self.y-back_y)/backPic.get_height()*600)),100)
         
-    def update(self,flag,mx,my,key,surf,surf2,enemies,cx,cy,directions,backPic,back_mask): #Draws the player and calls most of the functions before it
+    def update(self,flag,mx,my,key,surf,surf2,enemies,cx,cy,directions,backPic): #Draws the player and calls most of the functions before it
         if flag:
             self.attacking(mx,my,enemies)
         else:
             self.skillChange(key)
         self.changePic()
+        self.sprint(key)
         self.rect[0],self.rect[1] = self.x-self.image.get_width()/2,self.y-self.image.get_height()/2
-        screen.blit(self.image,self.rect)   #(screen,(255,0,0),self.rect)
-        if self.kind == 'Wizard' or self.kind == 'Archer':
-            self.bullets.update(cx,cy,None,enemies,key)
+        screen.blit(self.image,self.rect)  #(screen,(255,0,0),self.rect) 
+        self.bullets.update(cx,cy,None,enemies,key)
         self.HUD(surf)
         self.drawSkillBar(surf2)
         self.hurt = self.takeDamage(enemies)
         self.heal()
         self.attack , self.spriteCount = self.skillUse(rclick, self.attack, self.spriteCount, enemies)
         self.fillMap(cx,cy,backPic)
-        if self.confused:
-            self.collidePoints = [
-            [(self.rect[0]+self.rect[2]/3,self.rect[1]+3/4*self.rect[3]),(self.rect[0]+2/3*self.rect[2],self.rect[1]+3/4*self.rect[3]),(self.rect[0]+self.rect[2]/2,self.rect[1]+3/4*self.rect[3])],#Down
-            [(self.rect[0]+self.rect[2],self.rect[1]+7/8*self.rect[3])], #Right
-            [(self.rect[0],self.rect[1]+7/8*self.rect[3])], #Left
-            [(self.rect[0]+self.rect[2]/3,self.rect[1]+self.rect[3]),(self.rect[0]+2/3*self.rect[2],self.rect[1]+self.rect[3]),(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3])]
-            ] #Holds the points to check for wall collisions
-        else:
-            self.collidePoints = [
-            [(self.rect[0]+self.rect[2]/3,self.rect[1]+self.rect[3]),(self.rect[0]+2/3*self.rect[2],self.rect[1]+self.rect[3]),(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3])], #Down
-            [(self.rect[0],self.rect[1]+7/8*self.rect[3])], #Left
-            [(self.rect[0]+self.rect[2],self.rect[1]+7/8*self.rect[3])], #Right
-            [(self.rect[0]+self.rect[2]/3,self.rect[1]+3/4*self.rect[3]),(self.rect[0]+2/3*self.rect[2],self.rect[1]+3/4*self.rect[3]),(self.rect[0]+self.rect[2]/2,self.rect[1]+3/4*self.rect[3])]
-            ] #Holds the points to check for wall collisions
-        back_x,back_y = self.movement(directions,backPic,back_mask,cx,cy,key)
-        return back_x,back_y
         
 class Enemy(sprite.Sprite):
-    def __init__(self,health,kind,x,y):
+    def __init__(self,health,kind):
         super().__init__()
         self.kind = kind
         if self.kind == 'Archer':
@@ -610,16 +533,7 @@ class Enemy(sprite.Sprite):
             self.image = image.load('Art\Enemies\Mage.png').convert()
         else:
             self.image = image.load('Art\Enemies\Dragon.png').convert()
-        self.draw = True
         self.image.set_colorkey((255,255,255))
-        if x == None:
-            self.x = randint(0,2980)
-        else:
-            self.x = x
-        if y == None:
-            self.y = randint(0,2380)
-        else:
-            self.y = y
         self.x = randint(0,2980)
         self.y = randint(0,2380)
         self.rect = Rect(self.x,self.y,20,20)
@@ -634,97 +548,61 @@ class Enemy(sprite.Sprite):
         self.angle = None
         self.poisoned = []
 
-    def statRest(health,speed,damage):   #resets stats to remove debuffs
+    def statReset(self,health, mana,stamina, damage, defense, speed):
+        'Resets the stats to normal after using a stat changing skill'
         if health != None:
             self.health = health
-        elif speed != None:
-            self.speed = speed
-        elif damage != None:
+        if mana != None:
+            self.mana = mana
+        if stamina != None:
+            self.stamina = stamina
+        if damage != None:
             self.damage = damage
+        if defense != None:
+            self.defense = defense
+        if speed != None:
+            self.speed = speed
 
-    def createProjectile(self, kind):
+    def createProjectile(self):
         centx = self.rect[0]+self.rect[2]/2 #x coord of starting pos for arrow
         centy = self.rect[1]+self.rect[3]/2 #y coord of starting pos for arrow
         dx,dy = player.rect[0]+randint(-3,3)-centx,player.rect[1]+randint(-3,3)-centy #distance (horizontally and vertically) from player to starting pos (accuracy is +- 5)
         angle = atan2(dy,dx)
         cx = randint(10,20)*cos(angle)
         cy = randint(10,20)*sin(angle)
-        self.bullets.add(Projectile(centx,centy,cx,cy,angle,None,kind))
-
-    def grouping(self,enemies):
-        for enemy in enemies:
-            if enemy != self and hypot(self.x-enemy.x,self.y-enemy.y)<50:
-                dx = self.x-enemy.x
-                dy = self.y-enemy.y
-                dist = max(1,hypot(dx,dy))
-                d2 = dist**2
-                self.vx += 10*dx/d2
-                self.vy += 10*dy/d2
+        self.bullets.add(Projectile(centx,centy,cx,cy,angle,None,'Enemy'))
         
-    def AI(self,back_x,back_y,back_mask):
-        self.vx,self.vy = 0,0
+    def AI(self):
         dx = player.rect[0]+player.rect[2]/2 - self.rect[0]
         dy = player.rect[1]+player.rect[3]/2- self.rect[1]
         self.angle = atan2(dy,dx)
-        dist = hypot(dx,dy)
-        
         if self.kind == 'Charger' and -10<=self.rect[0]<=1034 and -10<=self.rect[1]<=745:
-            if dist>50:
-                self.vx += int(self.speed*cos(self.angle))
-                self.vy += int(self.speed*sin(self.angle))
-            else:
-                self.vx -= int(self.speed*cos(self.angle))
-                self.vy -= int(self.speed*sin(self.angle))
-        elif self.kind == 'Archer' and 30<=self.rect[0]<=900:
-            if dist<100:
-                self.vx -= int(self.speed*cos(self.angle))
-                self.vy -= int(self.speed*sin(self.angle))
-        elif self.kind == 'Flying':
-            if dist>50:
-                self.vx += int(self.speed*cos(self.angle))
-                self.vy += int(self.speed*sin(self.angle))
-            else:
-                self.vx -= int(self.speed*cos(self.angle))
-                self.vy -= int(self.speed*sin(self.angle))
-        elif self.kind == 'Mage':
-            if dist<100:
-                if randint(1,50) == 1:
-                    self.x = randint(-100,100)+player.x
-                    self.y = randint(-100,100)+player.y
-            else:
-                self.vx += int(self.speed*cos(self.angle))
-                self.vy += int(self.speed*sin(self.angle))
-        elif self.kind == 'Monster': #RENAME TO GHOST
-            if dist<100:
-                self.draw = True
-                self.vx += int(self.speed*cos(self.angle))
-                self.vy += int(self.speed*sin(self.angle))
-            else:
-                if randint(1,2) == 1:
-                    self.draw == True
-                else:
-                    self.draw = False
-        elif self.kind == 'Theif':
-            if dist<100:
-                if randint(1,100) == 1 and len(enemies)<150:
-                    enemies.append(Enemy(100,choice(['Charger','Archer','Theif','Monster','Flying','Mage']),self.x+choice([-20,20]),self.y+choice([-20,20])))
-            else:
-                self.vx -= int(self.speed*cos(self.angle))
-                self.vy -= int(self.speed*sin(self.angle))
-        elif self.kind == 'Healer':
-            for enemy in enemies:
-                if enemy != self and dist<100:
-                    if enemy.health < 100:
-                        enemy.health += 1
-        self.grouping(enemies)
-
-    def attacking(self):
-        if 30<=enemy.rect[0]<=900 and 30<=enemy.rect[1]<=600:
-            if self.kind == 'Archer' and randint(1,50) == 1:
-                enemy.createProjectile('Enemy') #CHANGE ENEMY TO ENEMY ARCHER
-            elif self.kind == 'Mage' and randint(1,50) == 1:
-                enemy.createProjectile('HomingEnemy')
-        
+            self.x += int(5*cos(self.angle))
+            self.y += int(5*sin(self.angle))
+        elif self.kind == 'Archer' and 30<=self.rect[0]<=900 and 30<=self.rect[1]<=750:
+            if (dx**2+dy**2)**0.5<100:
+                self.x -= int(3*cos(self.angle))
+                self.y -= int(3*sin(self.angle))
+        elif self.kind == 'Thief':
+            
+            if player.movepos == 0:
+                if 30<=self.rect[0]<=900 and 30<=self.rect[1]<=750:
+                    if self.x<900-self.x:
+                        self.x += 5
+                    else:
+                        self.x -= 5
+                    if self.y<750-self.y:
+                        self.y += 5
+                    else:
+                        self.y -= 5
+        else:
+            x = choice(self.moves)
+            self.vx += x
+            self.moves.append(x)
+            y = choice(self.moves)
+            self.vy += y
+            self.moves.append(y)
+            
     def takeDamage(self,enemies):
         if self.hurt:
             self.health -= 50
@@ -734,39 +612,29 @@ class Enemy(sprite.Sprite):
             player.leveling()
             
     def movement(self,cx,cy):
-        if self.kind == 'Flying':
-            self.x += self.vx
-            self.y += self.vy
-        elif wallCol(back_mask,[(self.x+self.vx+back_x,self.y+self.vy+back_y)],back_x,back_y) == [False]:
-            self.x += self.vx
-            self.y += self.vy
+        self.rect[0] = self.x + cx +self.vx
+        self.rect[1] = self.y + cy +self.vy
         
-    def update(self,cx,cy,enemies,key,enemyList,back_mask):
-        for i in self.poisoned:
-            i.health -= 1
-        self.rect[0],self.rect[1] = self.x+cx,self.y+cy#-self.rect[2]/2+back_x,self.y-self.rect[3]/2+back_y
+    def update(self,cx,cy,enemies,key,enemyList):   #################################################################
         self.bullets.update(cx,cy,self.bullets,enemyList,key)
         if player.AIignore == False: #affected  by shadow skill
-            self.AI(cx,cy,back_mask)
+            self.AI()
         self.movement(cx,cy)
-        self.attacking()
         self.takeDamage(enemies)
-        #screen.blit(self.image,(self.rect[0],self.rect[1]))
-        if self.draw == True:
-            screen.blit(self.image,(self.rect[0],self.rect[1]))
+        screen.blit(self.image,(self.rect[0],self.rect[1]))
+        for i in self.poisoned:
+            i.health -= 1
+            
 
 class Projectile(sprite.Sprite):
     def __init__(self,x,y,vx,vy,angle,bigBulletSize,kind):
         super().__init__()
-        self.image = image.load('Art\Weapons\Arrow.png').convert()
-        self.image.set_colorkey((255,255,255))
+        self.kind = kind
         self.x = x #Inital pos x
         self.y = y #Inital pos y
         self.vx = vx #Horizontal velocity
         self.vy = vy #Vertical velocity
         self.angle = angle
-        self.kind = kind
-        self.display = transform.rotate(self.image,degrees(-self.angle))
         if self.kind == "PoisonArrow":
             self.image = image.load('Art\Weapons\poisonArrow.png').convert()
         else:
@@ -775,94 +643,84 @@ class Projectile(sprite.Sprite):
             elif player.kind == "Wizard" or player.kind == "Knight":
                 self.image = image.load('Art\Weapons\spell.png').convert()  
         self.image.set_colorkey((255,255,255))
+
         self.display = transform.rotate(self.image,degrees(-self.angle))
         if self.kind == 'BigBullet':
             self.display = transform.scale(self.display,(bigBulletSize*5,bigBulletSize*5))
             self.rect = Rect(self.x,self.y,bigBulletSize*5,bigBulletSize*5)
         else:
             self.rect = Rect(self.x,self.y,self.display.get_width(),self.display.get_height())
+        
     def speed(self,key):
-        #IMPROVE ORGAINZATION AND EFFICIENCY
+        #IMPROVE ORGAINZATION AND EFFICANCY
         '''
 Offsets the arrow depending on where the player is moving (faster if player is moving into arrow, slower if player is moving away from arrow
         '''
         if player.pmovex == False:
             if key[K_a] or key[K_LEFT]:
-                self.x -= player.vx
+                self.rect[0] += player.vx
             if key[K_d] or key[K_RIGHT]:
-                self.x -= player.vx
+                self.rect[0] -= player.vx
         if player.pmovey == False:
             if key[K_w] or key[K_UP]:
-                self.y -= player.vy
+                self.rect[1] += player.vy
             if key[K_s] or key[K_DOWN]:
-                self.y -= player.vy
-        if self.kind == 'HomingEnemy':
-            dx = player.x-self.x
-            dy = player.y-self.y
-            self.angle = atan2(dy,dx)
-            self.vx,self.vy = 5*cos(self.angle),5*sin(self.angle)
-            self.display = transform.rotate(self.image,degrees(-self.angle))
-        self.x +=  self.vx
-        self.y +=  self.vy
-        self.rect[0],self.rect[1] = self.x,self.y
-        screen.blit(self.display,(self.rect[0],self.rect[1]))
-        if self.kind == 'HomingArrow':
-            dx = mx-self.x
-            dy = my-self.y
-            self.angle = atan2(dy,dx)
-            self.vx,self.vy = 5*cos(self.angle),5*sin(self.angle)
-            self.display = transform.rotate(self.image,degrees(-self.angle))
-        self.x +=  self.vx
-        self.y +=  self.vy
-        self.rect[0],self.rect[1] = self.x,self.y
+                self.rect[1] -= player.vy
+        self.rect[0] += self.vx
+        self.rect[1] += self.vy
         screen.blit(self.display,(self.rect[0],self.rect[1]))
         
     def update(self,cx,cy,enemyArrows,enemyList,key):
-        #and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]
         if self.kind == 'Spell' or self.kind == 'Arrow':    #Basic attacks
             for enemy in enemyList:
                 if self.rect.colliderect(enemy.rect):
                     player.bullets.remove(self)
                     enemy.health -= player.damage
-            if -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
+            if -50<= self.x <= 1074 and -50<= self.y <= 750:
                 self.speed(key)
             else:
-                player.bullets.remove(self)
+                group.remove(self)
+
 #Skills and more complex projectiles
         elif self.kind == 'PoisonArrow':
+            self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)
             for enemy in enemyList:
                 if self.rect.colliderect(enemy.rect):
                     player.bullets.remove(self)
                     enemy.poisoned.append(enemy)
-            if -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
+            if -50<= self.x <= 1074 and -50<= self.y <= 750:
                 self.speed(key)
             else:
-                player.bullets.remove(self)
+                group.remove(self)
+                
         elif self.kind == 'BigBullet':
+            self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)
             for enemy in enemyList:
                 if self.rect.colliderect(enemy.rect):
                     player.bullets.remove(self)
                     enemy.health -= player.damage*self.rect[2]
-            if -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
+            if -50<= self.x <= 1074 and -50<= self.y <= 750:
                 self.speed(key)
             else:
-                player.bullets.remove(self)
-        elif self.kind == 'HomingArrow':
+                group.remove(self)
+        elif self.kind == 'FollowBullet':
+            self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)
             for enemy in enemyList:
                 if self.rect.colliderect(enemy.rect):
                     player.bullets.remove(self)
                     enemy.health -= player.damage*self.rect[2]
-            if -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
+            if -50<= self.x <= 1074 and -50<= self.y <= 750:
                 self.speed(key)
             else:
-                player.bullets.remove(self)
+                group.remove(self)
         else:
             if self.rect.colliderect(player.rect):
                 enemyArrows.remove(self)
-            elif -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
+            elif -50<= self.x <= 1074 and -50<= self.y <= 750:
                 self.speed(key)
             else:
                 enemyArrows.remove(self)
+        
                 
 class Weapons(sprite.Sprite):
     def __init__(self,name,description,damage,pic,speed,kind):
@@ -1055,6 +913,7 @@ def drawInventoryStats(infoSurface,x,y,item,kind):
         infoSurface.blit(itemStatsFont.render('Damage: %s' % (item.damage),True,(255,255,255)),(5,30))
     else:
         infoSurface.blit(itemStatsFont.render('Defense: %s' % (int(item.defense*100)),True,(255,255,255)),(5,30))
+        print(item.defense)
     infoSurface.blit(itemStatsFont.render(item.description,True,(255,255,255)),(5,45))
     screen.blit(infoSurface,(x,y))
 
@@ -1105,6 +964,7 @@ def drawSkillMenu(skillPic,player,click,mx,my,selectedskill,key):
     screen.fill((0,0,0))
     screen.blit(skillPic,(60,75))
     index=0
+    print(selectedskill)
     if selectedskill!= None:
         if key[K_1] == 1 and selectedskill!=0:
             player.skillicons.insert(0,player.skillicons.pop(selectedskill))
@@ -1137,19 +997,12 @@ def drawSkillMenu(skillPic,player,click,mx,my,selectedskill,key):
             index+=1
     return selectedskill
 
-###########################################################
-def wallCol(img,coordList,back_x,back_y):
-    checkList = []
-    for coord in coordList:
-        #draw.circle(screen,(0,0,0),(int(coord[0]),int(coord[1])),5)
-        if 0<=coord[0]<=screen.get_width() and 0<=coord[1]<=screen.get_height():
-            if img.get_at((int(-back_x+coord[0]),int(-back_y+coord[1]))) == (255,0,0):
-                #draw.circle(screen,(255,0,0),(int(coord[0]),int(coord[1])),5)
-                checkList.append(True)
-            else:
-                checkList.append(False)
-    return checkList
-##################################################################
+def wallCol(img,x,y,back_x,back_y):
+    if 0<=x<=screen.get_width() and 0<=y<=screen.get_height():
+        if img.get_at((int(-back_x+x),int(-back_y+y))) == (255,0,0):
+            return True
+        else:
+            return False
         
 def tabs(player,pic,inventRects,click,mx,my,infoSurface,alphaSurf,tabMode,backPic,skillMenu,pos,selectedskill,key):
     if tabMode == 0:
@@ -1157,54 +1010,15 @@ def tabs(player,pic,inventRects,click,mx,my,infoSurface,alphaSurf,tabMode,backPi
     elif tabMode == 1:
         drawMap(backPic,player,pos)
     elif tabMode == 2:
-        selectedskill = drawSkillMenu(skillMenu,player,click,mx,my,selectedskill,key)
+        selectedskill=drawSkillMenu(skillMenu,player,click,mx,my,selectedskill,key)
+        draw.rect(screen,(255,255,255),(10,10,1000,60))
         return selectedskill
     draw.rect(screen,(255,255,255),(10,10,1000,60))
 
-################################ ADDED ########################################
 def knockBack(x,y,power,angle): #NOT DONE YET
     x += power*cos(radians(angle))
     y += power*sin(radians(angle))
     return x,y
-
-def confusion(player):
-    timerConfusion = Timer(5, player.statReset, [None, None, None, None, None,[(0,5),(-5,0),(5,0),(0,-5)],False])
-    for pos in range(len(player.speeds)):
-        player.speeds[pos] = (player.speeds[pos][0]*-1,player.speeds[pos][1]*-1)
-    timerConfusion.start()
-    return True
-
-
-def deleteList(lst):
-    lst = []
-    return lst
-
-def traps(trapList,screen,width,height,amount):
-    trapList = []
-    timerTrap = Timer(5 , deleteList(trapList))
-    for i in range(amount):
-        x = randint(0,screen.get_width()-width)
-        y = randint(0,screen.get_height()-height)
-        if player.rect.colliderect(Rect(x,y,width,height)) == False:
-            trapList.append(Rect(x,y,width,height))
-    return trapList
-
-def drawTraps(screen,player,trapList):
-    for trap in trapList:
-        draw.rect(screen,(255,255,255),trap)
-        if player.rect.colliderect(trap):
-            player.health -= 20
-
-def slow(player):
-    timerSlow = Timer(5 , self.statReset, [None, None, None, None, None,[self.speed],None])
-    for val in player.speed:
-        player.speed[player.speed.index(val)] = val*0.6
-    timerConfusion.start()
-
-def pull(player,x,y):
-    dx,dy = x-player.x,y-player.y #################################################### FINISH
-####################################################################################################################
-    
 
 def generateItems(player,fileList,times):
     items = []
@@ -1221,88 +1035,6 @@ def generateItems(player,fileList,times):
         items.append('%s %s of %s' % (adjective,item,person))
     return items
 
-##################################################### ADDED ######################################################
-def drawIntroEffects(tx,ty,titleScrollx,titleScrolly,back,textbox1,name,fire,firePos):
-    if tx == -back.get_width()+screen.get_width() or tx == 0:
-        titleScrollx *= -1
-    if ty == -back.get_height()+screen.get_height() or ty == 0:
-        titleScrolly *= -1
-
-    screen.blit(back,(tx,ty))
-    screen.blit(textbox1,(300,40))
-    screen.blit(name,(400,65))
-    screen.blit(fire[int(firePos)],(350,50))
-    screen.blit(fire[int(firePos)],(675,50))
-
-    if firePos >= 3:
-        firePos = 0
-    else:
-        firePos += 0.3
-    tx += titleScrollx
-    ty += titleScrolly
-    return firePos,tx,ty,titleScrollx,titleScrolly
-
-def selectMenu(fire,firePos,titleMenu,titleRects,click,mx,my):
-    screen.blit(textbox2,(300,175))
-    screen.blit(titleMenu,(335,180))
-    for rect in range(len(titleRects)):
-        if titleRects[rect].collidepoint(mx,my):
-            screen.blit(fire[int(firePos)],(titleRects[rect][0]+50,titleRects[rect][1]-20))
-            screen.blit(fire[int(firePos)],(titleRects[rect][0]+265,titleRects[rect][1]-20))
-            if click:
-                if rect == 0:
-                    return 1
-                elif rect == 1:
-                    return 1
-                elif rect == 2:
-                    return 1
-                elif rect == 3:
-                    return 2
-    return 0
-                    
-def characterSelection(click,choiceRects,backRect):
-    mode = 0
-    titleMode = 1
-    player = None
-    choices = [
-        [Weapons('Rusty Sword','A REALLY bad sword',5,'Art\Weapons\swords\sword1.png',1,'Sword'),'Knight',["Block","Rambo","Bomb","Pull","Siphon","Freeze","Deflect"]],
-        [Weapons('Old Staff','A REALLY bad staff',5,'Art\Weapons\Staffs\staff1.png',1,'Staff'),'Wizard',["Heal","Fire","Ring","Boost","Charge","Turtle","Shadow"]],
-        [Weapons('Old Bow','A REALLY bad bow',5,'Art\Weapons\Bows\Bow0.png',1,'Bow'),'Archer',["Sniper", "Barrage", "PoisonArrow", "FollowMe","Fear","RadiusBarrage","ForestGump"]]
-        ]
-    for x in range(3):
-        screen.blit(textbox3,(choiceRects[x][0],choiceRects[x][1]))
-        screen.blit(titlePics[x],(choiceRects[x][0]+175-titlePics[x].get_width()/2,choiceRects[x][1]+170-titlePics[x].get_height()/2))
-        if choiceRects[x].collidepoint(mx,my) and click:
-            player = Player(50,100,20,[[],[],[]],choices[x][0],Armour('Bob2','Bob2',0.01,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,choices[x][1],10,0.1,choices[x][2])
-            mixer.music.stop()
-
-            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            player.health = 999
-            player.mana = 999
-            player.stamina = 999
-            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            mode = 1
-            titleMode = 0
-    draw.rect(screen,(255,255,255),backRect)
-    if backRect.collidepoint(mx,my) and click:
-        mode = 0
-        titleMode = 0
-    return mode,titleMode,player
-
-def drawIntroScreen(tx,ty,titleScrollx,titleScrolly,back,back_x,back_y,textbox1,name,fire,firePos,titleMenu,titleRects,titleMode,click,choiceRects,backRect,mx,my,running):
-    player = None
-    if mixer.music.get_busy() == 0:
-        mixer.music.play()
-    firePos,tx,ty,titleScrollx,titleScrolly = drawIntroEffects(tx,ty,titleScrollx,titleScrolly,back,textbox1,name,fire,firePos)
-    if titleMode == 0:
-        titleMode = selectMenu(fire,firePos,titleMenu,titleRects,click,mx,my)
-        mode = 0
-    elif titleMode == 1:
-        mode, titleMode, player = characterSelection(click,choiceRects,backRect)
-    elif titleMode == 2:
-        mode = 0
-        running = False
-    return mode,0,0,firePos,running,titleMode,player,tx,ty,titleScrollx,titleScrolly
 #===========================================================================================================================================#
 
 running =True
@@ -1314,6 +1046,7 @@ click = False
 '''
 Loads the background map and creates the x and y variables used for to offset the background for movement
 '''
+
 back = image.load('Art\Backgrounds\Background.jpg')
 back_mask = image.load('Art\Backgrounds\BackgroundMASK.png')
 back_x = 0
@@ -1324,6 +1057,7 @@ back_y = 0
 '''
 Creates a surface (thats translucent) to show health, stamina, mana, money and level
 '''
+
 hud = Surface((250,150))
 hud.fill((0,0,0))
 hud.set_alpha(200)
@@ -1349,21 +1083,28 @@ titleScrollx,titleScrolly = 1,1 #Used for the title screen scrolling feature
 textbox1 = image.load('Art\\Misc\\textbox.gif').convert()
 textbox2 = image.load('Art\Misc\Textbox2.png').convert()
 textbox2.set_colorkey((255,255,255))
-textbox3 = image.load('Art\Misc\Textbox3.png').convert() 
-textbox3.set_colorkey((255,255,255)) 
+textbox3 = image.load('Art\Misc\Textbox3.png').convert() #ADDED THIS
+textbox3.set_colorkey((255,255,255)) #ADDED THIS
 backRect = Rect(500,670,24,10)
 choiceRects = []
 for i in range(3):
     choiceRects.append(Rect(3+340*i,185,300,450))
+#===================================#
+
+#===================================#
 
 #============= Music ===============#
 mixer.music.load('Song.mp3')
+#===================================#
+
+#========= Object creations =========#
+
 #===================================#
 #======================================= Variables ==============================#
 #========== Surfaces ==========#
 infoSurface = Surface((200,100),SRCALPHA)
 alphaSurf = Surface((screen.get_width(),screen.get_height()),SRCALPHA)
-trapList = []
+    
 #============ Lists ===========#
 weaponFile = []
 for line in open('Weapons.txt').read().strip().split('\n'):
@@ -1385,7 +1126,7 @@ saves = []
 
 enemies = []
 for i in range(100):
-    enemies.append(Enemy(100,choice(['Theif','Charger','Archer','Theif','Monster','Flying','Mage']),None, None))
+    enemies.append(Enemy(100,choice(['Charger','Archer','Theif','Monster','Flying','Mage'])))
 
 inventRects = [[],[],[]]
 for i in range(2):
@@ -1404,6 +1145,9 @@ titleRects = []
 for i in range(4):
     titleRects.append(Rect(348,260+60*i,350,50))
 #=== Animations ===#
+#==================#
+
+#==============================#
 
 #======== Fonts ========#
 shopFont = font.SysFont('Times New Roman',25)
@@ -1431,8 +1175,7 @@ titlePics = [transform.scale(image.load('Art\Player\Knight\Player00.png'),(100,2
 mode = 0 # 0 = menu, 1 = game, 2 = inventory, 3 = pause, 4 = save, 5 = shop
 titleMode = 0 #ADDED THIS
 tabMode = 0
-selectedskill = None
-
+selectedskill=None
 while running:    
     for e in event.get():
         if e.type == KEYDOWN:
@@ -1487,21 +1230,89 @@ while running:
             if e.button == 1:
                 click = True
             if e.button == 3:
-                pass
-                #trapList = traps(trapList,screen,50,50,50)
-            if e.button == 3:
                 rclick = True
-        elif e.type == QUIT:
+        elif e.type == QUIT:      
             running = False
 
     kb = key.get_pressed()
     mx,my = mouse.get_pos()
     mb = mouse.get_pressed()
 
-    if mode == 0: 
-        mode,back_x,back_y,firePos,running,titleMode,player,tx,ty,titleScrollx,titleScrolly = drawIntroScreen(tx,ty,titleScrollx,titleScrolly,back,back_x,back_y,textbox1,name,fire,firePos,titleMenu,titleRects,titleMode,click,choiceRects,backRect,mx,my,running)
+    if mode == 0: #CHANGED THIS
+        if mixer.music.get_busy() == 0:
+            mixer.music.play()
+        if tx == -back.get_width()+screen.get_width() or tx == 0:
+            titleScrollx *= -1
+        if ty == -back.get_height()+screen.get_height() or ty == 0:
+            titleScrolly *= -1
+
+        screen.blit(back,(tx,ty))
+        screen.blit(textbox1,(300,40))
+        screen.blit(name,(400,65))
+        screen.blit(fire[int(firePos)],(350,50))
+        screen.blit(fire[int(firePos)],(675,50))
+
+        if firePos >= 3:
+            firePos = 0
+        else:
+            firePos += 0.3
+        tx += titleScrollx
+        ty += titleScrolly
+
+        if titleMode == 0:
+            screen.blit(textbox2,(300,175))
+            screen.blit(titleMenu,(335,180))
+
+            for rect in range(len(titleRects)):
+                if titleRects[rect].collidepoint(mx,my):
+                    screen.blit(fire[int(firePos)],(titleRects[rect][0]+50,titleRects[rect][1]-20))
+                    screen.blit(fire[int(firePos)],(titleRects[rect][0]+265,titleRects[rect][1]-20))
+                    if click:
+                        if rect == 0:
+                            titleMode = 1
+                        elif rect == 1:
+                            print('hi;')
+                        elif rect == 2:
+                            print('Nope')
+                        elif rect == 3:
+                            running = False
+        elif titleMode == 1:
+            for x in range(3):
+                screen.blit(textbox3,(choiceRects[x][0],choiceRects[x][1]))
+                screen.blit(titlePics[x],(choiceRects[x][0]+175-titlePics[x].get_width()/2,choiceRects[x][1]+170-titlePics[x].get_height()/2))
+            if choiceRects[0].collidepoint(mx,my) and click:
+                titleMode = 0
+                mode = 1
+                #knight
+                #health, stamina, mana, inventory, currentWeapon, currentArmour, currentBoots, money, kind, damage, defense, hotbar
+                player = Player(100,100,20,[[],[],[]],Weapons('Rusty Sword','A REALLY bad sword',5,'Art\Weapons\swords\sword1.png',1,'Sword'),Armour('Bob2','Bob2',0.01,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Knight',10,0.1,["Block","Rambo","Bomb"])
+                back_x,back_y = 0,0
+                mixer.music.stop()
+                
+            elif choiceRects[1].collidepoint(mx,my) and click:
+                titleMode = 0
+                mode = 1
+                #Wizard
+                #health, stamina, mana, inventory, currentWeapon, currentArmour, currentBoots, money, kind, damage, defense, hotbar
+                player = Player(50,100,20,[[],[],[]],Weapons('Old Staff','A REALLY bad staff',5,'Art\Weapons\Staffs\staff1.png',1,'Staff'),Armour('Bob2','Bob2',0.10,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Wizard',10,0.1,["Heal","Fire","Ring","Boost","Charge","Turtle","Shadow"])
+                back_x,back_y = 0,0
+                mixer.music.stop()
+                
+            elif choiceRects[2].collidepoint(mx,my) and click:
+                titleMode = 0
+                mode = 1
+                #Archer
+                #health, stamina, mana, inventory, currentWeapon, currentArmour, currentBoots, money, kind, damage, defense, hotbar
+                player = Player(50,100,20,[[],[],[]],Weapons('Old Bow','A REALLY bad bow',5,'Art\Weapons\Bows\Bow0.png',1,'Bow'),Armour('Bob2','Bob2',0.10,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,'Archer',10,0.1,["Sniper", "Barrage", "PoisonArrow", "FollowMe","Fear","RadiusBarrage","ForestGump"])
+                back_x,back_y = 0,0
+                mixer.music.stop()
+                
+            draw.rect(screen,(255,255,255),backRect)
+            if backRect.collidepoint(mx,my) and click:
+                titleMode = 0
+        
     elif mode == 2:
-        selectedskill = tabs(player,inventoryPic,inventRects,click,mx,my,infoSurface,alphaSurf,tabMode,back,skillMenu,mapPos,selectedskill,kb)
+        selectedskill=tabs(player,inventoryPic,inventRects,click,mx,my,infoSurface,alphaSurf,tabMode,back,skillMenu,mapPos,selectedskill,kb)
         if mapPos >= len(player.animations[0])-1:
             mapPos = 0
         else:
@@ -1528,13 +1339,75 @@ while running:
         the middle (vertically and/or horizontallly) the camera keeps the player in the center
         '''
         
-        directions = [[kb[K_DOWN],kb[K_s]],[kb[K_LEFT],kb[K_a]],[kb[K_RIGHT],kb[K_d]],[kb[K_UP],kb[K_w]]]
+        directions = {'Down': [kb[K_DOWN],kb[K_s]],'Left':[kb[K_LEFT],kb[K_a]],'Right':[kb[K_RIGHT],kb[K_d]],'Up':[kb[K_UP],kb[K_w]]}
 
 #============================== Up/Down/Left/Right ===============================#
         '''
         Moves either the map or player (player moves if pmovex/y is True). Also turns pmovex/y False if the player returned to the center (the vertical and/or horizontal
         center). Also stops the player from going past the edge of the screen.
         '''
+        player.moving = False
+        
+        if 1 in directions['Right'] and 1 not in directions['Left']:
+            player.movepos = 2
+            if wallCol(back_mask,player.rect[0]+player.rect[2]+player.vx,player.rect[1]+player.rect[3],back_x,back_y) == False and wallCol(back_mask,player.rect[0]+player.rect[2]+player.vx,player.rect[1],back_x,back_y) == False:
+                player.moving = True
+                if player.pmovex:
+                    if player.x+player.vx <= screen.get_width():
+                        player.x += player.vx
+                    if 495 <= player.x <= 505:
+                        player.pmovex = False
+                else:
+                    back_x -= player.vx
+                if back_x<-back.get_width()+screen.get_width():
+                    player.pmovex = True
+                    back_x = -back.get_width()+screen.get_width()
+                
+        if 1 in directions['Left'] and 1 not in directions['Right']:
+            player.movepos = 1
+            if wallCol(back_mask,player.rect[0]-player.vx,player.rect[1]+player.rect[3],back_x,back_y) == False and wallCol(back_mask,player.rect[0]-player.vx,player.rect[1],back_x,back_y) == False:
+                player.moving = True
+                if player.pmovex:
+                    if player.x-player.vx>=0:
+                        player.x -= player.vx
+                    if 495<= player.x <= 505:
+                        player.pmovex = False
+                else:
+                    back_x += player.vx
+                if back_x>0:
+                    player.pmovex = True
+                    back_x = 0
+                
+        if 1 in directions['Up'] and 1 not in directions['Down']:
+            player.movepos = 3
+            if wallCol(back_mask,player.rect[0],player.rect[1]-player.vy,back_x,back_y) == False and wallCol(back_mask,player.rect[0]+player.rect[2],player.rect[1]-player.vy,back_x,back_y) == False:
+                player.moving = True
+                if player.pmovey:
+                    if player.y-player.vy >= 0:
+                        player.y -= player.vy
+                    if 335<= player.y <= 345:
+                        player.pmovey = False
+                else:
+                    back_y += player.vy
+                if back_y>0:
+                    player.pmovey = True
+                    back_y = 0
+                    
+        if 1 in directions['Down'] and 1 not in directions['Up']:
+            player.movepos = 0
+            if wallCol(back_mask,player.rect[0],player.rect[1]+player.rect[3]+player.vy,back_x,back_y) == False and wallCol(back_mask,player.rect[0]+player.rect[2],player.rect[1]+player.rect[3]+player.vy,back_x,back_y) == False:
+                player.moving = True
+                if player.pmovey:
+                    if player.y+player.vy <= 615-player.rect[3]/2:
+                        player.y += player.vy
+                    if 335 <= player.y <= 345:
+                        player.pmovey = False
+                else:
+                    back_y -= player.vy
+                if back_y<-back.get_height()+screen.get_height():
+                    player.pmovey = True
+                    back_y = -back.get_height()+screen.get_height()
+
     #===================================================================================#
 
         screen.blit(back,(back_x,back_y)) #Blits updated map onto screen
@@ -1545,12 +1418,14 @@ while running:
         '''
         Update all sprites (their movement, stats, etc.)
         '''
+        player.mana = 100
         for enemy in enemies:
-            enemy.update(back_x,back_y,enemies,kb,enemies,back_mask)  #updates enemies
-        back_x,back_y = player.update(click,mx,my,kb,hud,skillBarPic,enemies,back_x,back_y,directions,back,back_mask) #Updates player
-        drawTraps(screen,player,trapList)
+            if enemy.kind == 'Archer':
+                if 30<=enemy.rect[0]<=900 and 30<=enemy.rect[1]<=600 and randint(1,50) == 1:
+                    enemy.createProjectile()
+            enemy.update(back_x,back_y,enemies,kb,enemies)  #updates enemies
+        player.update(click,mx,my,kb,hud,skillBarPic,enemies,back_x,back_y,directions,back) #Updates player
     #==================================#
-        print(player.health,player.mana,player.stamina)
     click = False
     rclick = False
     display.flip()
