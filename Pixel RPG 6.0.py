@@ -356,7 +356,7 @@ class Player(sprite.Sprite):
             elif self.hotbar[self.currentSkill] == "Boost" :
                 if skillFlag and self.mana > 5 and attack == False:                    
                     self.mana -= 5
-                    timerBoost = Timer(10.0 , self.statReset, [None, None, None, self.damage, self.defense,None, None])    #takes old stats and creates a timer
+                    timerBoost = Timer(10.0 , self.statReset, [None, None, None, self.damage, self.defense,None, None, None])    #takes old stats and creates a timer
                     self.damage *= 2
                     self.defense /= 2
                     timerBoost.start()    #starts the timer and runs self.statReset once timer is finished.
@@ -498,7 +498,7 @@ class Player(sprite.Sprite):
             elif self.hotbar[self.currentSkill] == "ForestGump":
                 if skillFlag and self.mana >= 15 and attack == False:
                     self.mana -= 15
-                    timerForestGump = Timer(10.0 , self.statReset, [None, None, self.stamina, self.damage, None, None,  None])
+                    timerForestGump = Timer(10.0 , self.statReset, [None, None, self.stamina, self.damage, None, None,  None, None])
                     self.damage /= 2
                     self.stamina += 9999    #Tested, it is impossible to use all that stamina 
                     timerForestGump.start()   
@@ -515,14 +515,14 @@ class Player(sprite.Sprite):
             if self.hotbar[self.currentSkill] == "Block":
                 if skillFlag and self.mana >= 5:
                     self.mana -= 5
-                    timerBlock = Timer(5.0, self.statReset, [None, None, None, None, self.defense, None, None])
+                    timerBlock = Timer(5.0, self.statReset, [None, None, None, None, self.defense, None, None, None])
                     self.speed = 0  #player will not move once merged with rishis code
                     timerBlock.start()
                     self.defense = 9999
             elif self.hotbar[self.currentSkill] == "Rambo":
                 if skillFlag and self.mana >= 10:
                     self.mana -= 10
-                    timerRambo = Timer(3.0, self.statReset, [None, None, None, self.damage, self.defense, None, None]) #health, mana, stamina, damage, defense, speed, confused
+                    timerRambo = Timer(3.0, self.statReset, [None, None, None, self.damage, self.defense, None, None, None]) #health, mana, stamina, damage, defense, speed, confused
                     self.defense = 999999
                     self.damage /= 10
                     timerRambo.start()
@@ -543,18 +543,21 @@ class Player(sprite.Sprite):
             elif self.hotbar[self.currentSkill] == "Freeze":
                 if skillFlag and self.mana >= 10:
                     self.mana -= 10
-                    timerFreeze = Timer(10.0, self.statReset, [None, None, None, self.damage, None, self.speeds, None]) #health, mana, stamina, damage, defense, speed, confused
+                    timerFreeze = Timer(10.0, self.statReset, [None, None, None, self.damage, None, self.speeds, None, None]) #health, mana, stamina, damage, defense, speed, confused
                     self.speeds = [(0,1),(-1,0),(1,0),(0,-1)]
                     self.damage *= 2
                     timerFreeze.start()
 
             elif self.hotbar[self.currentSkill] == "Siphon":
-                print(self.siphoning)
                 if skillFlag and self.mana >= 10:
                     self.mana -= 10
                     timerSiphon = Timer(10.0, self.statReset, [None, None, None, None, None, None, None, False]) #health, mana, stamina, damage, defense, speed, confused
                     self.siphoning = True
                     timerSiphon.start()
+
+            elif self.hotbar[self.currentSkill] == "Chain":
+                if skillFlag and self.mana >= 10:
+                    pass
 
                     
                     
@@ -800,7 +803,7 @@ Offsets the arrow depending on where the player is moving (faster if player is m
             dx = player.x-self.x
             dy = player.y-self.y
             self.angle = atan2(dy,dx)
-            self.vx,self.vy = 5*cos(self.angle),5*sin(self.angle)
+            self.vx,self.vy = 4*cos(self.angle),4*sin(self.angle)
             self.display = transform.rotate(self.image,degrees(-self.angle))
         self.x +=  self.vx
         self.y +=  self.vy
@@ -1168,7 +1171,7 @@ def knockBack(x,y,power,angle): #NOT DONE YET
     return x,y
 
 def confusion(player):
-    timerConfusion = Timer(5, player.statReset, [None, None, None, None, None,[(0,5),(-5,0),(5,0),(0,-5)],False])
+    timerConfusion = Timer(5, player.statReset, [None, None, None, None, None,[(0,5),(-5,0),(5,0),(0,-5)],False, None])
     for pos in range(len(player.speeds)):
         player.speeds[pos] = (player.speeds[pos][0]*-1,player.speeds[pos][1]*-1)
     timerConfusion.start()
@@ -1196,7 +1199,7 @@ def drawTraps(screen,player,trapList):
             player.health -= 20
 
 def slow(player):
-    timerSlow = Timer(5 , self.statReset, [None, None, None, None, None,[self.speed],None])
+    timerSlow = Timer(5 , self.statReset, [None, None, None, None, None,[self.speed],None, None])
     for val in player.speed:
         player.speed[player.speed.index(val)] = val*0.6
     timerConfusion.start()
