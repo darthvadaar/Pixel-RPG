@@ -33,12 +33,17 @@ class Player(sprite.Sprite):
         self.kind = kind
         
         self.skillSprites = []   #2D list of the skill sprite
+        self.levelingup=False
+        self.levelspritenum=0
+        self.levelupanimation=[image.load(x)for x in glob.glob("Art/levelup/*.png")]
         if self.kind == 'Knight':
             self.animations = [[image.load('Art\Player\Knight\Player%d%d.png' %(x,y)).convert_alpha() for y in range(5)] for x in range(4)]
             self.skillicons=glob.glob("Art\Skillicons\Knight\*.png")
             self.skillSprites.append(glob.glob("Art/Skills/skillBomb/*.png")) #0
+            self.sound={"Hit":mixer.Sound("Art/Sound/Wizard/Hit.wav"),"Map":mixer.Sound("Art/Sound/Wizard/Map.wav")}
         elif self.kind == 'Wizard':
             self.animations = [[image.load('Art\Player\Wizard\Player%d%d.png' %(x,y)).convert_alpha() for y in range(3)] for x in range(4)]
+            self.animations.append([image.load("Art\Player\Wizard\Playerghost.png")])
             self.skillicons=glob.glob("Art\Skillicons\Wizard\*.png")
             self.skillSprites.append(glob.glob("Art/Skills/skillFire/*.png")) #0
             self.skillSprites.append(glob.glob("Art/Skills/skillRing/*.png")) #1
@@ -46,12 +51,17 @@ class Player(sprite.Sprite):
             self.skillSprites.append(glob.glob("Art/Skills/Totems/*.png")) #3
             self.skillSprites.append(glob.glob("Art/Skills/skillBoost/*.png")) #4
             self.skillSprites.append(glob.glob("Art/Skills/skillHeal/*.png")) #5
+            self.sound={"Attack":mixer.Sound("Art/Sound/Wizard/Attack.wav"),"Heal":mixer.Sound("Art/Sound/Wizard/Heal.wav"),"Fire":mixer.Sound("Art/Sound/Wizard/Fire.wav")
+                               ,"Ring":mixer.Sound("Art/Sound/Wizard/Ring.wav"),"Boost":mixer.Sound("Art/Sound/Wizard/Boost.wav"),
+                          "Charge":mixer.Sound("Art/Sound/Wizard/Charge.wav"),"Turtle":mixer.Sound("Art/Sound/Wizard/Turtle.wav"),"Shadow":mixer.Sound("Art/Sound/Wizard/Shadow.wav")
+                        ,"Hit":mixer.Sound("Art/Sound/Wizard/Hit.wav"),"Map":mixer.Sound("Art/Sound/Wizard/Map.wav")}#dictionary full of sound effects
         elif self.kind == 'Archer':
             self.animations = [[image.load('Art\Player\Archer\Player%d%d.png' % (x,y)).convert_alpha() for y in range(3)] for x in range(4)]
             self.skillicons = glob.glob("Art\Skillicons\Archer\*.png")
             self.skillSprites.append(glob.glob("Art/Skills/skillSniper/*.png")) #0
             self.skillSprites.append(glob.glob("Art/Skills/skillForestGump/*.png")) #1
             self.skillSprites.append(glob.glob("Art/Skills/skillFear/*.png")) #2
+            self.sound={"Hit":mixer.Sound("Art/Sound/Wizard/Hit.wav"),"Map":mixer.Sound("Art/Sound/Wizard/Map.wav")}#dictionary full of sound effects
 
         for i in range(0,len(self.skillSprites)):   #Turn all the globbed images into surfaces
             for x in range(0,len(self.skillSprites[i])):
@@ -203,12 +213,17 @@ class Player(sprite.Sprite):
             self.pos += 0.4
         else:
             self.pos = 0
-        self.image = self.animations[self.movepos][int(self.pos)]
+        if self.hotbar[self.currentSkill] == "Shadow" and self.attack:#drawing the ghost sprite
+            self.image = self.animations[4][0]
+        else:
+            self.image = self.animations[self.movepos][int(self.pos)]
         
     def leveling(self): #Increases level of player after he has gotten 100 xp and increases stats randomly
         if self.xp<90:
             self.xp += 10
         else:
+            self.levelingup=True
+            self.levelspritenum=0
             self.xp = 10
             self.level += 1
             if self.maxhealth<=90:
@@ -245,6 +260,8 @@ class Player(sprite.Sprite):
                     #enemy.health -= 50
         elif self.kind == 'Wizard':
             self.bullets.add(Projectile(self.x,self.y,10*cos(angle),10*sin(angle),angle,None,'Spell'))
+            if mixer.get_busy()==0:
+                self.sound["Attack"].play()
         elif self.kind == "Archer":
             self.bullets.add(Projectile(self.x,self.y,10*cos(angle),10*sin(angle),angle,None,'Arrow'))
             
@@ -254,6 +271,9 @@ class Player(sprite.Sprite):
         for enemy in enemies:
             if self.rect.colliderect(enemy.rect):
                 if self.health > 0 and self.siphoning == False:
+                    hiteffect=randint(0,50)
+                    if hiteffect==0:
+                        player.sound["Hit"].play()
                     #self.x,self.y = knockBack(self.x,self.y,10,enemy.angle)
                     self.health -= (1-player.defense-player.currentArmour.defense-player.currentBoots.defense)*enemy.damage
                     return True
@@ -303,6 +323,7 @@ class Player(sprite.Sprite):
         if player.kind == "Wizard":
             if self.hotbar[self.currentSkill] == "Heal":    #adds 20% of maxhealth to health
                 if skillFlag and self.health < self.maxhealth and self.mana > 2:
+                    self.sound["Heal"].play()
                     self.health += self.maxhealth * 0.20
                     self.mana -= 5
                     attack = True
@@ -318,6 +339,7 @@ class Player(sprite.Sprite):
                 
             elif self.hotbar[self.currentSkill] == "Fire":  #breathe fire and kill enemies
                 if skillFlag and self.mana > 5 and attack == False:
+                    self.sound["Fire"].play()
                     player.mana -= 5
                     attack = True
                     self.ang = degrees(atan2(mx - self.x, my - self.y )) + 180   #doesn't follow mouse if 180 is not added
@@ -340,6 +362,7 @@ class Player(sprite.Sprite):
                         
             elif self.hotbar[self.currentSkill] == "Ring":  
                 if skillFlag and self.mana > 10 and attack == False:
+                    self.sound["Ring"].play()
                     player.mana -= 15
                     attack = True
                 if attack:
@@ -354,7 +377,8 @@ class Player(sprite.Sprite):
                         attack = False
                                              
             elif self.hotbar[self.currentSkill] == "Boost" :
-                if skillFlag and self.mana > 5 and attack == False:                    
+                if skillFlag and self.mana > 5 and attack == False:
+                    self.sound["Boost"].play() 
                     self.mana -= 5
                     timerBoost = Timer(10.0 , self.statReset, [None, None, None, self.damage, self.defense,None, None, None])    #takes old stats and creates a timer
                     self.damage *= 2
@@ -371,6 +395,7 @@ class Player(sprite.Sprite):
                                                                              
             elif self.hotbar[self.currentSkill] == "Turtle":
                 if skillFlag and self.mana > 10 and attack == False:
+                    self.sound["Turtle"].play()
                     self.mana -= 10
                     attack = True
                 if attack:
@@ -386,6 +411,7 @@ class Player(sprite.Sprite):
                         
             elif self.hotbar[self.currentSkill] == "Charge":
                 if skillFlag and self.mana > 5 and attack == False:
+                    self.sound["Charge"].play()
                     attack = True
                 if attack:
                     self.mana -= 5
@@ -404,6 +430,7 @@ class Player(sprite.Sprite):
                         
             elif self.hotbar[self.currentSkill] == "Shadow":
                 if skillFlag and self.mana > 10 and attack == False:
+                    self.sound["Shadow"].play()
                     self.mana -= 10
                     attack = True
                 if attack:
@@ -558,15 +585,18 @@ class Player(sprite.Sprite):
             elif self.hotbar[self.currentSkill] == "Chain":
                 if skillFlag and self.mana >= 10:
                     pass
-
-                    
-                    
+                
         return attack, spriteCount  #returning so that the last known value of attack and spriteCount can be reused
 
     def fillMap(self,back_x,back_y,backPic):
         draw.circle(self.mapFog,(255,0,0),(int((self.x-back_x)/backPic.get_width()*900),int((self.y-back_y)/backPic.get_height()*600)),100)
         
     def update(self,flag,mx,my,key,surf,surf2,enemies,cx,cy,directions,backPic,back_mask): #Draws the player and calls most of the functions before it
+        if self.levelingup and self.levelspritenum<=28:
+            screen.blit(self.levelupanimation[int(self.levelspritenum)],(self.x-self.levelupanimation[int(self.levelspritenum)].get_width()/2,self.y-self.levelupanimation[int(self.levelspritenum)].get_height()/2))
+            self.levelspritenum+=0.5
+        else:
+            self.levelingup=False
         if flag:
             self.attacking(mx,my,enemies)
         else:
@@ -603,16 +633,24 @@ class Enemy(sprite.Sprite):
     def __init__(self,health,kind,x,y):
         super().__init__()
         self.kind = kind
+        self.spritenum=0
+        self.direction="up"
+        self.images=[]
         if self.kind == 'Archer':
-            self.image = image.load('Art\Enemies\Archer.png').convert()
+            self.loadenemyimages()
+            self.image = self.images[0][0]
         elif self.kind == 'Charger':
-            self.image = image.load('Art\Enemies\Knight.png').convert()
+            self.loadenemyimages()
+            self.image = self.images[0][0]
         elif self.kind == 'Thief':
-            self.image = image.load('Art\Enemies\Thief.png').convert()
+            self.loadenemyimages()
+            self.image = self.images[0][0]
         elif self.kind == 'Mage':
-            self.image = image.load('Art\Enemies\Mage.png').convert()
+            self.loadenemyimages()
+            self.image = self.images[0][0]
         else:
-            self.image = image.load('Art\Enemies\Dragon.png').convert()
+            self.loadenemyimages()
+            self.image = self.images[0][0]
         self.draw = True
         self.image.set_colorkey((255,255,255))
         if x == None:
@@ -625,7 +663,7 @@ class Enemy(sprite.Sprite):
             self.y = y
         self.x = randint(0,2980)
         self.y = randint(0,2380)
-        self.rect = Rect(self.x,self.y,20,20)
+        self.rect = Rect(self.image.get_rect())
         self.speed = randint(3,7)
         self.hurt = False
         self.health = health
@@ -636,7 +674,14 @@ class Enemy(sprite.Sprite):
         self.bullets = sprite.Group()
         self.angle = None
         self.poisoned = []
-
+    def loadenemyimages(self):
+        self.images.append(glob.glob("Art\\Enemies\\"+self.kind+"\\up\\*.png"))
+        self.images.append(glob.glob("Art\\Enemies\\"+self.kind+"\\down\\*.png"))
+        self.images.append(glob.glob("Art\\Enemies\\"+self.kind+"\\right\\*.png"))
+        self.images.append(glob.glob("Art\\Enemies\\"+self.kind+"\\left\\*.png"))
+        for i in range (len(self.images)):
+                for x in range (len(self.images[i])):
+                    self.images[i][x]=image.load(self.images[i][x])
     def statRest(health,speed,damage):   #resets stats to remove debuffs
         if health != None:
             self.health = health
@@ -671,6 +716,15 @@ class Enemy(sprite.Sprite):
         self.angle = atan2(dy,dx)
         dist = hypot(dx,dy)
         
+        if -3*3.14/4<=self.angle <-3.14/4:
+            self.direction="up"
+        if 3*3.14/4<=self.angle or self.angle<-3*3.14/4:
+            self.direction="left"
+        if 3.14/4<=self.angle<3*3.14/4:
+            self.direction="down"
+        elif -3.14/4<=self.angle<3.14/4:
+            self.direction="right"
+            
         if self.kind == 'Charger' and -10<=self.rect[0]<=1034 and -10<=self.rect[1]<=745:
             if dist>50:
                 self.vx += int(self.speed*cos(self.angle))
@@ -682,7 +736,7 @@ class Enemy(sprite.Sprite):
             if dist<100:
                 self.vx -= int(self.speed*cos(self.angle))
                 self.vy -= int(self.speed*sin(self.angle))
-        elif self.kind == 'Flying':
+        elif self.kind == 'Dragon':
             if dist>50:
                 self.vx += int(self.speed*cos(self.angle))
                 self.vy += int(self.speed*sin(self.angle))
@@ -697,7 +751,7 @@ class Enemy(sprite.Sprite):
             else:
                 self.vx += int(self.speed*cos(self.angle))
                 self.vy += int(self.speed*sin(self.angle))
-        elif self.kind == 'Monster': #RENAME TO GHOST
+        elif self.kind == 'Ghost': #RENAME TO GHOST
             if dist<100:
                 self.draw = True
                 self.vx += int(self.speed*cos(self.angle))
@@ -710,7 +764,7 @@ class Enemy(sprite.Sprite):
         elif self.kind == 'Theif':
             if dist<100:
                 if randint(1,100) == 1 and len(enemies)<150:
-                    enemies.append(Enemy(100,choice(['Charger','Archer','Theif','Monster','Flying','Mage']),self.x+choice([-20,20]),self.y+choice([-20,20])))
+                    enemies.append(Enemy(100,choice(['Charger','Archer','Theif','Monster','Dragon','Mage']),self.x+choice([-20,20]),self.y+choice([-20,20])))
             else:
                 self.vx -= int(self.speed*cos(self.angle))
                 self.vy -= int(self.speed*sin(self.angle))
@@ -756,7 +810,17 @@ class Enemy(sprite.Sprite):
         self.takeDamage(enemies)
         #screen.blit(self.image,(self.rect[0],self.rect[1]))
         if self.draw == True:
-            screen.blit(self.image,(self.rect[0],self.rect[1]))
+            if self.images != []:
+                if self.direction=="up":
+                    screen.blit(self.images[0][int(self.spritenum)],self.rect)
+                if self.direction=="down":
+                    screen.blit(self.images[1][int(self.spritenum)],self.rect)
+                if self.direction=="right":
+                    screen.blit(self.images[2][int(self.spritenum)],self.rect)
+                if self.direction=="left":
+                    screen.blit(self.images[3][int(self.spritenum)],self.rect)
+            else:
+                screen.blit(self.image,(self.rect[0],self.rect[1]))
 
 class Projectile(sprite.Sprite):
     def __init__(self,x,y,vx,vy,angle,bigBulletSize,kind):
@@ -954,6 +1018,7 @@ def purchase(shopRects,mbFlag,money,shopItems):
                 money -= shopItems[shopRects.index(item)].price
                 draw.rect(screen,(0,255,0),item)
                 player.inventory[pos].append(shopItems[shopRects.index(item)])
+                choice(npcsound["Bought"]).play()
                 del shopItems[shopRects.index(item)]
             else:
                 draw.rect(screen,(255,0,0),item)
@@ -1277,7 +1342,8 @@ def characterSelection(click,choiceRects,backRect):
         screen.blit(titlePics[x],(choiceRects[x][0]+175-titlePics[x].get_width()/2,choiceRects[x][1]+170-titlePics[x].get_height()/2))
         if choiceRects[x].collidepoint(mx,my) and click:
             player = Player(50,100,20,[[],[],[]],choices[x][0],Armour('Bob2','Bob2',0.01,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,choices[x][1],10,0.1,choices[x][2])
-            mixer.music.stop()
+            mixer.music.load("Song2.wav")
+            mixer.music.play()
 
             #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             player.health = 999
@@ -1312,7 +1378,8 @@ running =True
 screen = display.set_mode((1024,700))
 clock = time.Clock()
 click = False
-
+#===========SOUNDS=============#
+npcsound={"Hello":[mixer.Sound(x)for x in glob.glob("Art/Sound/npc/hello/*.wav")],"Bye":[mixer.Sound(x)for x in glob.glob("Art/Sound/npc/bye/*.wav")],"Bought":[mixer.Sound(x)for x in glob.glob("Art/Sound/npc/bought/*.wav")]}
 #=========== Background ============#
 '''
 Loads the background map and creates the x and y variables used for to offset the background for movement
@@ -1388,7 +1455,7 @@ saves = []
 
 enemies = []
 for i in range(100):
-    enemies.append(Enemy(100,choice(['Theif','Charger','Archer','Theif','Monster','Flying','Mage']),None, None))
+    enemies.append(Enemy(100,choice(['Theif','Charger','Archer','Monster','Dragon','Mage']),None, None))#Snake,Scorpien
 
 inventRects = [[],[],[]]
 for i in range(2):
@@ -1452,6 +1519,7 @@ while running:
             if e.key == K_z:
                 if mode == 1:
                     mode = 5
+                    choice(npcsound["Hello"]).play()
                     shopArmour = []
                     for armour in generateItems(player,armourFile,11):
                         if player.kind == 'Knight':
@@ -1472,15 +1540,18 @@ while running:
                     for boot in generateItems(player,bootsFile,11):
                         shopBoots.append(Boots(boot,'Good Stuffs',gauss(0.03+player.level/20,0.02),'Art\Boots\Boot%d.png' % (randint(0,2)),'Boots'))
                 elif mode == 5:
+                    choice(npcsound["Bye"]).play()  
                     mode = 1
             if e.key == K_q:
                 if mode == 2:
+                    player.sound["Map"].play()
                     if tabMode != 2:
                         tabMode += 1
                     else:
                         tabMode = 0
             if e.key == K_e:
                 if mode == 2:
+                    player.sound["Map"].play()
                     if tabMode != 0:
                         tabMode -= 1
                     else:
@@ -1553,7 +1624,6 @@ while running:
         back_x,back_y = player.update(click,mx,my,kb,hud,skillBarPic,enemies,back_x,back_y,directions,back,back_mask) #Updates player
         drawTraps(screen,player,trapList)
     #==================================#
-        print(player.health,player.mana,player.stamina)
     click = False
     rclick = False
     display.flip()
