@@ -1265,44 +1265,11 @@ def knockBack(x,y,power,angle): #NOT DONE YET
     y += power*sin(radians(angle))
     return x,y
 
-def confusion(player):
-    timerConfusion = Timer(5, player.statReset, [None, None, None, None, None,[(0,5),(-5,0),(5,0),(0,-5)],False, None])
-    for pos in range(len(player.speeds)):
-        player.speeds[pos] = (player.speeds[pos][0]*-1,player.speeds[pos][1]*-1)
-    timerConfusion.start()
-    return True
-
-
-def deleteList(lst):
-    lst = []
-    return lst
-
-def traps(trapList,screen,width,height,amount):
-    trapList = []
-    timerTrap = Timer(5 , deleteList(trapList))
-    for i in range(amount):
-        x = randint(0,screen.get_width()-width)
-        y = randint(0,screen.get_height()-height)
-        if player.rect.colliderect(Rect(x,y,width,height)) == False:
-            trapList.append(Rect(x,y,width,height))
-    return trapList
-
-def drawTraps(screen,player,trapList):
-    for trap in trapList:
-        draw.rect(screen,(255,255,255),trap)
-        if player.rect.colliderect(trap):
-            player.health -= 20
-
 def slow(player):
     timerSlow = Timer(5 , self.statReset, [None, None, None, None, None,[self.speed],None, None])
     for val in player.speed:
         player.speed[player.speed.index(val)] = val*0.6
     timerConfusion.start()
-
-def pull(player,x,y):
-    dx,dy = x-player.x,y-player.y #################################################### FINISH
-####################################################################################################################
-    
 
 def generateItems(player,fileList,times):
     items = []
@@ -1585,9 +1552,6 @@ while running:
             if e.button == 1:
                 click = True
             if e.button == 3:
-                pass
-                #trapList = traps(trapList,screen,50,50,50)
-            if e.button == 3:
                 rclick = True
         elif e.type == QUIT:
             running = False
@@ -1646,7 +1610,11 @@ while running:
         for enemy in enemies:
             enemy.update(back_x,back_y,enemies,kb,enemies,back_mask)  #updates enemies
         back_x,back_y = player.update(click,mx,my,kb,hud,skillBarPic,enemies,back_x,back_y,directions,back,back_mask) #Updates player
-        drawTraps(screen,player,trapList)
+        for trap in boss.trapList:
+            draw.rect(screen,(0,0,0),trap)
+            if player.rect.colliderect(trap):
+                player.health -= 10)
+        boss.update(back_x,back_y,enemies,kb)
     #==================================#
         print(player.health,player.mana,player.stamina)
     click = False
