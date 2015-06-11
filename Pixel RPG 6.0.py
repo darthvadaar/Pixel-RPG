@@ -732,6 +732,13 @@ class Enemy(sprite.Sprite):
             else:
                 self.vx -= int(self.speed*cos(self.angle))
                 self.vy -= int(self.speed*sin(self.angle))
+        elif self.kind == 'Monster' and -10<=self.rect[0]<=1034 and -10<=self.rect[1]<=745:
+            if dist>50:
+                self.vx += int(self.speed*cos(self.angle))
+                self.vy += int(self.speed*sin(self.angle))
+            else:
+                self.vx -= int(self.speed*cos(self.angle))
+                self.vy -= int(self.speed*sin(self.angle))
         elif self.kind == 'Archer' and 30<=self.rect[0]<=900:
             if dist<100:
                 self.vx -= int(self.speed*cos(self.angle))
@@ -799,6 +806,9 @@ class Enemy(sprite.Sprite):
             self.y += self.vy
         
     def update(self,cx,cy,enemies,key,enemyList,back_mask):
+        self.spritenum += 0.2
+        if self.spritenum >= 3:
+            self.spritenum = 0
         for i in self.poisoned:
             i.health -= 1
         self.rect[0],self.rect[1] = self.x+cx,self.y+cy#-self.rect[2]/2+back_x,self.y-self.rect[3]/2+back_y
