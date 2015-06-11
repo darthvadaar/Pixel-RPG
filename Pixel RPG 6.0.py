@@ -670,56 +670,56 @@ class Enemy(sprite.Sprite):
         dy = player.rect[1]+player.rect[3]/2- self.rect[1]
         self.angle = atan2(dy,dx)
         dist = hypot(dx,dy)
-        
-        if self.kind == 'Charger' and -10<=self.rect[0]<=1034 and -10<=self.rect[1]<=745:
-            if dist>50:
-                self.vx += int(self.speed*cos(self.angle))
-                self.vy += int(self.speed*sin(self.angle))
-            else:
-                self.vx -= int(self.speed*cos(self.angle))
-                self.vy -= int(self.speed*sin(self.angle))
-        elif self.kind == 'Archer' and 30<=self.rect[0]<=900:
-            if dist<100:
-                self.vx -= int(self.speed*cos(self.angle))
-                self.vy -= int(self.speed*sin(self.angle))
-        elif self.kind == 'Flying':
-            if dist>50:
-                self.vx += int(self.speed*cos(self.angle))
-                self.vy += int(self.speed*sin(self.angle))
-            else:
-                self.vx -= int(self.speed*cos(self.angle))
-                self.vy -= int(self.speed*sin(self.angle))
-        elif self.kind == 'Mage':
-            if dist<100:
-                if randint(1,50) == 1:
-                    self.x = randint(-100,100)+player.x
-                    self.y = randint(-100,100)+player.y
-            else:
-                self.vx += int(self.speed*cos(self.angle))
-                self.vy += int(self.speed*sin(self.angle))
-        elif self.kind == 'Ghost': 
-            if dist<100:
-                self.draw = True
-                self.vx += int(self.speed*cos(self.angle))
-                self.vy += int(self.speed*sin(self.angle))
-            else:
-                if randint(1,2) == 1:
-                    self.draw == True
+        if -10<=self.rect[0]<=1034 and -10<=self.rect[1]<=745:
+            if self.kind == 'Charger':
+                if dist>50:
+                    self.vx += int(self.speed*cos(self.angle))
+                    self.vy += int(self.speed*sin(self.angle))
+                elif dist<30:
+                    self.vx -= int(self.speed*cos(self.angle))
+                    self.vy -= int(self.speed*sin(self.angle))
+            elif self.kind == 'Archer':
+                if dist<100:
+                    self.vx -= int(self.speed*cos(self.angle))
+                    self.vy -= int(self.speed*sin(self.angle))
+            elif self.kind == 'Flying':
+                if dist>50:
+                    self.vx += int(self.speed*cos(self.angle))
+                    self.vy += int(self.speed*sin(self.angle))
+                elif dist<30:
+                    self.vx -= int(self.speed*cos(self.angle))
+                    self.vy -= int(self.speed*sin(self.angle))
+            elif self.kind == 'Mage':
+                if dist<100:
+                    if randint(1,50) == 1:
+                        self.x = randint(-100,100)+player.x
+                        self.y = randint(-100,100)+player.y
                 else:
-                    self.draw = False
-        elif self.kind == 'Summoner':
-            if dist<100:
-                if randint(1,100) == 1 and len(enemies)<150:
-                    enemies.append(Enemy(100,choice(['Charger','Archer',,'Ghost','Flying','Mage']),self.x+choice([-20,20]),self.y+choice([-20,20])))
-            else:
-                self.vx -= int(self.speed*cos(self.angle))
-                self.vy -= int(self.speed*sin(self.angle))
-        elif self.kind == 'Healer':
-            for enemy in enemies:
-                if enemy != self and dist<100:
-                    if enemy.health < 100:
-                        enemy.health += 1
-        self.grouping(enemies)
+                    self.vx += int(self.speed*cos(self.angle))
+                    self.vy += int(self.speed*sin(self.angle))
+            elif self.kind == 'Ghost': 
+                if dist<200:
+                    self.draw = True
+                    self.vx += int(self.speed*cos(self.angle))
+                    self.vy += int(self.speed*sin(self.angle))
+                else:
+                    if randint(1,5) == 1:
+                        self.draw = True
+                    else:
+                        self.draw = False
+            elif self.kind == 'Summoner':
+                if dist<100:
+                    if randint(1,100) == 1 and len(enemies)<150:
+                        enemies.append(Enemy(100,choice(['Charger','Archer',,'Ghost','Flying','Mage']),self.x+choice([-20,20]),self.y+choice([-20,20])))
+                else:
+                    self.vx -= int(self.speed*cos(self.angle))
+                    self.vy -= int(self.speed*sin(self.angle))
+            elif self.kind == 'Healer':
+                for enemy in enemies:
+                    if enemy != self and dist<100:
+                        if enemy.health < 100:
+                            enemy.health += 1
+            self.grouping(enemies)
 
     def attacking(self):
         if 30<=enemy.rect[0]<=900 and 30<=enemy.rect[1]<=600:
