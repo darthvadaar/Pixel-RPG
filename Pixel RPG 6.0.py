@@ -607,7 +607,7 @@ class Enemy(sprite.Sprite):
             self.image = image.load('Art\Enemies\Archer.png').convert()
         elif self.kind == 'Charger':
             self.image = image.load('Art\Enemies\Knight.png').convert()
-        elif self.kind == 'Thief':
+        elif self.kind == 'Summoner':
             self.image = image.load('Art\Enemies\Thief.png').convert()
         elif self.kind == 'Mage':
             self.image = image.load('Art\Enemies\Mage.png').convert()
@@ -697,7 +697,7 @@ class Enemy(sprite.Sprite):
             else:
                 self.vx += int(self.speed*cos(self.angle))
                 self.vy += int(self.speed*sin(self.angle))
-        elif self.kind == 'Monster': #RENAME TO GHOST
+        elif self.kind == 'Ghost': 
             if dist<100:
                 self.draw = True
                 self.vx += int(self.speed*cos(self.angle))
@@ -707,10 +707,10 @@ class Enemy(sprite.Sprite):
                     self.draw == True
                 else:
                     self.draw = False
-        elif self.kind == 'Theif':
+        elif self.kind == 'Summoner':
             if dist<100:
                 if randint(1,100) == 1 and len(enemies)<150:
-                    enemies.append(Enemy(100,choice(['Charger','Archer','Theif','Monster','Flying','Mage']),self.x+choice([-20,20]),self.y+choice([-20,20])))
+                    enemies.append(Enemy(100,choice(['Charger','Archer',,'Ghost','Flying','Mage']),self.x+choice([-20,20]),self.y+choice([-20,20])))
             else:
                 self.vx -= int(self.speed*cos(self.angle))
                 self.vy -= int(self.speed*sin(self.angle))
@@ -1483,7 +1483,7 @@ saves = []
 
 enemies = []
 for i in range(100):
-    enemies.append(Enemy(100,choice(['Theif','Charger','Archer','Theif','Monster','Flying','Mage']),None, None))
+    enemies.append(Enemy(100,choice(['Summoner','Charger','Archer','Summoner','Ghost','Flying','Mage']),None, None))
 
 inventRects = [[],[],[]]
 for i in range(2):
