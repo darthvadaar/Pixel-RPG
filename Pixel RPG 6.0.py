@@ -758,6 +758,101 @@ class Enemy(sprite.Sprite):
         if self.draw == True:
             screen.blit(self.image,(self.rect[0],self.rect[1]))
 
+class Boss(sprite.Sprite):
+    def __init__(self,health,x,y,kind):
+        super().__init__()
+        self.health = health
+        self.kind = kind
+        self.x,self.y = x,y
+        self.trapList = [] #Contains rects of all traps
+        self.suckCoord = None #The x,y coord for the pos the player is pushed towards
+        self.sucking = False #Used to stop enemy if he is sucking player in
+        self.healRect = None #A rect for the spot where the enemy heals at
+        self.healing = False #Used to stop the enemy from moving when he is healing
+        self.bullets = sprite.Group() #Hold enemys projectiles
+        self.angle = None #Angle towards destination
+    def createHealTotem(self): #Creates a totem for the enemy to heal in a random corner of the map
+        self.healRect = Rect(choice([100,screen.get_width-100]),choice([100,screen.get_height()-100]),50,50)
+        self.healing = True
+    def heal(self): #Checks if the enemy is near the totem and heals him if he is
+        dist = hypot(self.healRect[0]+self.healRect[2]/2-self.x,self.healRect[0]+self.healRect[3]/2-self.y)
+        if dist<100:
+            self.health += 10
+    def confusion(self):#,player): #Causes the player controls to be reversed
+        timerConfusion = Timer(5, player.statReset, [None, None, None, None, None,[(0,5),(-5,0),(5,0),(0,-5)],False])
+        for pos in range(len(player.speeds)):
+            player.speeds[pos] = (player.speeds[pos][0]*-1,player.speeds[pos][1]*-1)
+        timerConfusion.start()
+        player.confusion = True #Used to stop the player from geting confused while confused (which makes controls normal - opposite of opposite is normal)
+    def reset(self,trapList,suck): #Empties trapList or stops sucking once done with it
+        if trapList:
+            self.trapList = []
+        if suck:
+            self.sucking = False
+            self.suckCoord = None
+    def traps(self,width,height,amount): #Randomly generates traps
+        timerTrap = Timer(5,self.reset,[True,False])
+        for i in range(amount):
+            x = randint(0,screen.get_width()-width)
+            y = randint(0,screen.get_height()-height)
+            if player.rect.colliderect(Rect(x,y,width,height)) == False: #Stops a trap from being created on player
+                self.trapList.append(Rect(x,y,width,height))
+        timerTrap.start()
+    def suck(self,x,y): #Gets or randomly sets an x,y pos to draw player to
+        suckTimer = Timer(5,self.reset,[False,True])
+        suckTimer.start()
+        self.sucking = True
+        if x == None:
+            suckx = randint(100,screen.get_width()-100)
+        else:
+            suckx = x
+        if y == None:
+            y = randint(100,screen.get_width()-100)
+        else:
+            sucky = y
+        dx = x-player.x
+        dy = y-player.y
+        angle = atan2(dy,dx)
+        self.suckCoord = (suckx,sucky,angle)
+        
+    def drawTraps(self):#,player): #Draws traps and checks for collision with player
+        for trap in trapList:
+            draw.rect(screen,(255,255,255),trap)
+            if player.rect.colliderect(trap):
+                player.health -= 20
+    def createArrow(self): 
+        self.bullets.add(Projectile(self.x,self.y,4,4,self.angle,None,'HomingEnemy'))
+    def movement(self): #moves boss either to player or healing totem
+        if self.healing:
+            dx = self.healRect[0]+self.rect[2]/2-self.x
+            dy = self.healRect[1]+self.rect[3]/2-self.y
+        else:
+            dx = player.x-self.x
+            dy = player.y-self.y
+            dist = hypot(dx,dy)
+            self.angle = atan2(dy,dx)
+            if dist>150:
+                self.x += 5*cos(self.angle)
+                self.y += 5*sin(self.angle)
+            elif dist<100:
+                self.x -= 3*cos(self.angle)
+                self.y -= 3*sin(self.angle)
+    def attack(self):
+        if randint(1,100) == 1:
+            if len(self.trapList) == 0:
+                self.traps(50,50,10)
+        if randint(1,100) == 1:
+            choice([self.createArrow(),self.confusion(),self.suck(self.x,self.y)])
+    def update(self,cx,cy,enemyList,key):
+        draw.rect(screen,(255,255,255),(self.x,self.y,10,10)) #####TEMP UNTIL ALI GETS PIC OF BOSS
+        if self.sucking: #Moves player to spot
+            draw.circle(screen,(0,0,255),(int(self.suckCoord[0]),int(self.suckCoord[1])),5)
+            player.x += 2*cos(self.suckCoord[2])
+            player.y += 2*sin(self.suckCoord[2])
+        else:
+            self.movement()
+        self.bullets.update(cx,cy,self.bullets,enemyList,key) #Updates boss` projectiles
+
 class Projectile(sprite.Sprite):
     def __init__(self,x,y,vx,vy,angle,bigBulletSize,kind):
         super().__init__()
