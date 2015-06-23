@@ -18,7 +18,10 @@ init()
 ####################################################
 
 ################# CHANGES ########################
-
+#Desert: 1673, 2681
+#Forest: 213, 1341
+#Ice: 1913, 2609
+#ADD MENU Q-E Top
 ####################################################
 #=================================================== Classes ===================================================#
 
@@ -36,11 +39,23 @@ class Player(sprite.Sprite):
         self.levelingup=False
         self.levelspritenum=0
         self.levelupanimation=[image.load(x)for x in glob.glob("Art/levelup/*.png")]
+        #"Block","Rambo","Bomb","Magnet","Siphon","Freeze","Helper"
         if self.kind == 'Knight':
             self.animations = [[image.load('Art\Player\Knight\Player%d%d.png' %(x,y)).convert_alpha() for y in range(5)] for x in range(4)]
             self.skillicons=glob.glob("Art\Skillicons\Knight\*.png")
             self.skillSprites.append(glob.glob("Art/Skills/skillBomb/*.png")) #0
-            self.sound={"Hit":mixer.Sound("Art/Sound/Wizard/Hit.wav"),"Map":mixer.Sound("Art/Sound/Wizard/Map.wav")}
+            self.skillSprites.append(glob.glob("Art/Skills/skillMagnet/*.png"))#1
+            self.skillSprites.append(glob.glob("Art/Skills/skillHelper/*.png"))#2
+            self.skillSprites.append(glob.glob("Art/Skills/skillSiphon/*.png"))#3
+            self.skillSprites.append(glob.glob("Art/Skills/skillFreeze/*.png"))#4
+            self.skillSprites.append(glob.glob("Art/Skills/skillRambo/*.png"))#5
+            self.skillSprites.append(glob.glob("Art/Skills/skillBlock/*.png"))#6
+            
+            self.sound={"Hit":mixer.Sound("Art/Sound/Wizard/Hit.wav"),"Map":mixer.Sound("Art/Sound/Wizard/Map.wav"),"Block":mixer.Sound("Art/Sound/Knight/Block.wav")
+                        #,"Rambo":mixer.Sound("Art/Sound/Knight/Rambo.wav")
+                        ,"Bomb":mixer.Sound("Art/Sound/Knight/Bomb.wav"),"Magnet":mixer.Sound("Art/Sound/Knight/Magnet.wav")
+                        #,"Siphon":mixer.Sound("Art/Sound/Knight/Siphon.wav")
+                        ,"Freeze":mixer.Sound("Art/Sound/Knight/Freeze.wav"),"Helper":mixer.Sound("Art/Sound/Knight/Helper.wav")}
         elif self.kind == 'Wizard':
             self.animations = [[image.load('Art\Player\Wizard\Player%d%d.png' %(x,y)).convert_alpha() for y in range(3)] for x in range(4)]
             self.animations.append([image.load("Art\Player\Wizard\Playerghost.png")])
@@ -61,7 +76,9 @@ class Player(sprite.Sprite):
             self.skillSprites.append(glob.glob("Art/Skills/skillSniper/*.png")) #0
             self.skillSprites.append(glob.glob("Art/Skills/skillForestGump/*.png")) #1
             self.skillSprites.append(glob.glob("Art/Skills/skillFear/*.png")) #2
-            self.sound={"Hit":mixer.Sound("Art/Sound/Wizard/Hit.wav"),"Map":mixer.Sound("Art/Sound/Wizard/Map.wav")}#dictionary full of sound effects
+            self.sound={"Attack":mixer.Sound("Art/Sound/Archer/Attack.wav"),"Hit":mixer.Sound("Art/Sound/Wizard/Hit.wav"),"Map":mixer.Sound("Art/Sound/Wizard/Map.wav")
+                        ,"Sniper":mixer.Sound("Art/Sound/Archer/Snipershot.wav"),"Rapidfire":mixer.Sound("Art/Sound/Archer/Rapidfire.wav"),
+                        "ForestGump":mixer.Sound("Art/Sound/Archer/Boost.wav"),"Fear":mixer.Sound("Art/Sound/Archer/Fear.wav")}
 
         for i in range(0,len(self.skillSprites)):   #Turn all the globbed images into surfaces
             for x in range(0,len(self.skillSprites[i])):
@@ -116,7 +133,7 @@ class Player(sprite.Sprite):
         self.money = money
 
         self.projectileHit = False
-        self.mapFog = transform.scale(image.load('Art\Misc\Fog.png'),(900,600)).convert()#Surface((900,600),SRCALPHA).convert()
+        self.mapFog = mapList[mapNum][2]
         self.mapFog.set_colorkey((255,0,0))
 
         #Used with SkillUse and skillChange
@@ -127,6 +144,8 @@ class Player(sprite.Sprite):
         self.AIignore = False   #used for the shadow skill...will not update enemy AI if True
         self.coolDown = [False,False,False] #used to count cooldown time
         self.siphoning = False #checks if the siphoning skill is True or False
+
+        self.speech = 0
 
     def sprint(self,key): #Changes players speed depending on if the shift button is pressed and their current stamina
         if key[K_LSHIFT] == 1 and self.moving and self.stamina>0:
@@ -208,6 +227,35 @@ class Player(sprite.Sprite):
         draw.rect(surf,(255,255,0),(10,130,self.xp*2,5))
         screen.blit(surf,(10,10))
 
+    def npcInteract(self,currentQuest):#IAN
+
+        if currentQuest[0].collidepoint(-back_x+530,-back_y+345): #
+            screen.blit(questSpeech[self.speech],(800,20))
+            screen.blit(image.load("Art/Quests/questTip.png"),(800,500))
+
+            if kb[K_p]:
+                currentQuest.pop(0)
+                currentQuest.append(quests[self.speech])
+                self.speech+=1
+
+        if armorShop.collidepoint(-back_x+530,-back_y+345):#IA
+            screen.blit(image.load("Art/Quests/armorShopText.png"),(800,20))
+            screen.blit(image.load("Art/Quests/questTip.png"),(800,500))
+
+        if bootShop.collidepoint(-back_x+530,-back_y+345):
+            screen.blit(image.load("Art/Quests/bootShopText.png"),(800,20))
+            screen.blit(image.load("Art/Quests/questTip.png"),(800,500))
+
+        if weaponShop.collidepoint(-back_x+530,-back_y+345):
+            screen.blit(image.load("Art/Quests/weaponShopText.png"),(800,20))
+            screen.blit(image.load("Art/Quests/questTip.png"),(800,500))
+
+        if doorKeeper.collidepoint(-back_x+530,-back_y+345):
+            screen.blit(image.load("Art/Quests/doorKeeper.png"),(800,20))
+
+        if Rect(-back_x+530,-back_y+345,50,50).collidelist(helpMeRects)!= -1:
+            screen.blit(helpSay,(800,20))
+            
     def changePic(self):
         if self.moving and int(self.pos) != len(self.animations[self.movepos])-1:
             self.pos += 0.4
@@ -254,17 +302,21 @@ class Player(sprite.Sprite):
         if self.kind == 'Knight':
             display = transform.rotate(self.sword,degrees(-angle)) #Rotate a copy sword with the angle we calculated
             screen.blit(display,(self.x-display.get_width()//2,self.y-display.get_height()//2)) #Blit the image with the offset
-            for enemy in enemies:
-                if enemy.rect.collidepoint(int(self.x+ax),int(self.y+ay)) or enemy.rect.collidepoint(int(self.x+ax*2/3),int(self.y+ay*2/3)) or enemy.rect.collidepoint(int(self.x+ax/3),int(self.y+ay/3)):
-                    enemy.hurt = True
-                    #enemy.health -= 50
+            if mode == 1:
+                for enemy in enemies:
+                    if enemy.rect.collidepoint(int(self.x+ax),int(self.y+ay)) or enemy.rect.collidepoint(int(self.x+ax*2/3),int(self.y+ay*2/3)) or enemy.rect.collidepoint(int(self.x+ax/3),int(self.y+ay/3)):
+                        enemy.hurt = True
+            elif mode == 6:
+                if boss.rect.collidepoint(int(self.x+ax),int(self.y+ay)) or boss.rect.collidepoint(int(self.x+ax*2/3),int(self.y+ay*2/3)) or boss.rect.collidepoint(int(self.x+ax/3),int(self.y+ay/3)):
+                    boss.hurt = True
         elif self.kind == 'Wizard':
             self.bullets.add(Projectile(self.x,self.y,10*cos(angle),10*sin(angle),angle,None,'Spell'))
             if mixer.get_busy()==0:
                 self.sound["Attack"].play()
         elif self.kind == "Archer":
             self.bullets.add(Projectile(self.x,self.y,10*cos(angle),10*sin(angle),angle,None,'Arrow'))
-            
+            if mixer.get_busy()==0:
+                self.sound["Attack"].play()
     def takeDamage(self,enemies): #Checks if the player is touching an enemy and lowers the players health if it is
         if self.health <= 0:
             self.health = 0
@@ -274,17 +326,20 @@ class Player(sprite.Sprite):
                     hiteffect=randint(0,50)
                     if hiteffect==0:
                         player.sound["Hit"].play()
-                    #self.x,self.y = knockBack(self.x,self.y,10,enemy.angle)
                     self.health -= (1-player.defense-player.currentArmour.defense-player.currentBoots.defense)*enemy.damage
                     return True
                 elif self.health < self.maxhealth and self.siphoning:
-                    #self.x,self.y = knockBack(self.x,self.y,10,enemy.angle)
                     self.health += (1-player.defense-player.currentArmour.defense-player.currentBoots.defense)*enemy.damage
                     return True
-        if self.projectileHit:
-            self.health -= (1-player.defense-player.currentArmour.defense-player.currentBoots.defense)*randint(7,10)
+        if self.projectileHit and self.siphoning == False:
+            self.health -= 1
             self.projectileHit = False
             return True
+        elif self.health < self.maxhealth and self.siphoning:
+            self.health += (1-player.defense-player.currentArmour.defense-player.currentBoots.defense)*randint(7,10)
+            self.projectileHit = False
+            return True
+        self.projectileHit = False
         return False
                     
     def heal(self):
@@ -346,7 +401,7 @@ class Player(sprite.Sprite):
                 if attack:
                     if spriteCount == len(self.skillSprites[0]):
                         spriteCount = 0
-                        attack = False                     
+                        attack = False
                     else:
                         fire_img = transform.rotate(self.skillSprites[0][int(spriteCount)], self.ang)
                         fire_img_rectNew = fire_img.get_rect()
@@ -356,10 +411,14 @@ class Player(sprite.Sprite):
                         fire_img_rectNew.center = (posx,posy)
                         sprite = screen.blit(fire_img,fire_img_rectNew)
                         spriteCount += 0.5
-                        for i in enemyList:
-                            if sprite.colliderect(i.rect):
-                                i.health -= self.damage + 10 #subtracts the enemy health by your damage
-                        
+                        if mode == 1:
+                            for i in enemyList:
+                                if sprite.colliderect(i.rect):
+                                    i.health -= self.damage + 10 #subtracts the enemy health by your damage
+                        elif mode == 6:
+                            if sprite.colliderect(boss.rect):
+                                boss.health -= self.damage + 10 #subtracts the enemy health by your damage
+
             elif self.hotbar[self.currentSkill] == "Ring":  
                 if skillFlag and self.mana > 10 and attack == False:
                     self.sound["Ring"].play()
@@ -369,9 +428,13 @@ class Player(sprite.Sprite):
                     if spriteCount < len(self.skillSprites[1]):
                         sprite = screen.blit(self.skillSprites[1][spriteCount],(self.x - self.skillSprites[1][spriteCount].get_width()/2 , self.y - self.skillSprites[1][spriteCount].get_height()/2))
                         spriteCount += 1
-                        for i in enemyList:
-                            if sprite.colliderect(i.rect):
-                                i.health -= self.damage + 10
+                        if mode == 1:
+                            for i in enemyList:
+                                if sprite.colliderect(i.rect):
+                                    i.health -= self.damage + 10
+                        elif mode == 6:
+                            if sprite.colliderect(boss.rect):
+                                boss.health -= self.damage + 10
                     else:
                         spriteCount = 0
                         attack = False
@@ -402,9 +465,13 @@ class Player(sprite.Sprite):
                     if spriteCount < len(self.skillSprites[2]):
                         sprite = screen.blit(self.skillSprites[2][int(spriteCount)],(self.x - self.skillSprites[2][int(spriteCount)].get_width()/2,  self.y - self.skillSprites[2][int(spriteCount)].get_height()/2))
                         spriteCount += 0.7  #only go up by 0.7 frames every time to reduce super fast animations
-                        for i in enemyList:
-                            if sprite.colliderect(i.rect):
-                                i.speed *= 0.9
+                        if mode == 1:
+                            for i in enemyList:
+                                if sprite.colliderect(i.rect):
+                                    i.speed *= 0.9
+                        elif mode == 6:
+                            if sprite.colliderect(boss.rect):
+                                boss.speed *= 0.9
                     else: 
                         spriteCount = 0
                         attack = False
@@ -444,6 +511,7 @@ class Player(sprite.Sprite):
         elif player.kind == "Archer":
             if self.hotbar[self.currentSkill] == "Sniper":
                 if skillFlag and self.mana > 30 and attack == False:
+                    self.sound["Sniper"].play()
                     self.mana -= 30
                     self.ang = degrees(atan2(mx - self.x, my - self.y)) + 180
                     attack = True
@@ -460,12 +528,16 @@ class Player(sprite.Sprite):
                         playerY -= 250 * sin(radians(self.ang + 90))     #the first number changes how far in front of the character the sprite will blit
                         spriteImgNew.center = (playerX,playerY)
                         sprite = screen.blit(spriteImg, spriteImgNew)
-                        for i in enemyList:
-                            if sprite.colliderect(i.rect):
-                                i.health -= self.damage + 25
-                                
+                        if mode == 1:
+                            for i in enemyList:
+                                if sprite.colliderect(i.rect):
+                                    i.health -= self.damage + 15
+                        elif mode == 6:
+                            if sprite.colliderect(boss.rect):
+                                    boss.health -= self.damage + 15
             elif self.hotbar[self.currentSkill] == "Barrage":
                 if skillFlag and self.mana >= 10 and attack == False:
+                    self.sound["Rapidfire"].play()
                     self.mana -= 10
                     attack = True
                     self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)   #have to offset with weird values for some reason
@@ -478,6 +550,7 @@ class Player(sprite.Sprite):
 
             elif self.hotbar[self.currentSkill] == "RadiusBarrage":
                 if skillFlag and self.mana >= 10 and attack == False:
+                    self.sound["Rapidfire"].play()
                     self.mana -= 10
                     attack = True
                     self.ang = 0
@@ -490,12 +563,14 @@ class Player(sprite.Sprite):
 
             elif self.hotbar[self.currentSkill] == "PoisonArrow":
                 if skillFlag and self.mana >= 5 and attack == False:
+                    self.sound["Attack"].play()
                     self.mana -= 5
                     self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)   #have to offset with weird values for some reason
                     self.bullets.add(Projectile(self.x, self.y, 10*cos(-self.ang), 10*sin(-self.ang), -self.ang, None, 'PoisonArrow'))
 
             elif self.hotbar[self.currentSkill] == "FollowMe":
                 if skillFlag and self.mana >= 15 and attack == False:
+                    self.sound["Rapidfire"].play()
                     self.mana -= 15
                     self.ang = atan2(mx - self.x, my - self.y) + (3*pi/2)   #have to offset with weird values for some reason
                     attack = True
@@ -508,6 +583,7 @@ class Player(sprite.Sprite):
 
             elif self.hotbar[self.currentSkill] == "Fear":
                  if skillFlag and self.mana > 10 and attack == False:
+                    self.sound["Fear"].play()
                     self.mana -= 10
                     attack = True
                  if attack:
@@ -524,6 +600,7 @@ class Player(sprite.Sprite):
                                              
             elif self.hotbar[self.currentSkill] == "ForestGump":
                 if skillFlag and self.mana >= 15 and attack == False:
+                    self.sound["ForestGump"].play()
                     self.mana -= 15
                     timerForestGump = Timer(10.0 , self.statReset, [None, None, self.stamina, self.damage, None, None,  None, None])
                     self.damage /= 2
@@ -541,11 +618,20 @@ class Player(sprite.Sprite):
         elif self.kind == "Knight":
             if self.hotbar[self.currentSkill] == "Block":
                 if skillFlag and self.mana >= 5:
+                    self.sound["Block"].play()
                     self.mana -= 5
                     timerBlock = Timer(5.0, self.statReset, [None, None, None, None, self.defense, None, None, None])
                     self.speed = 0  #player will not move once merged with rishis code
                     timerBlock.start()
                     self.defense = 9999
+                    attack = True
+                if attack:
+                    if spriteCount < len(self.skillSprites[6]):
+                        sprite = screen.blit(self.skillSprites[6][spriteCount],(self.x - self.skillSprites[6][spriteCount].get_width()/2 , self.y + self.rect.h- self.skillSprites[6][spriteCount].get_height()/2-20))
+                        spriteCount += 1
+                    else:
+                        spriteCount = 0
+                        attack = False
             elif self.hotbar[self.currentSkill] == "Rambo":
                 if skillFlag and self.mana >= 10:
                     self.mana -= 10
@@ -553,45 +639,119 @@ class Player(sprite.Sprite):
                     self.defense = 999999
                     self.damage /= 10
                     timerRambo.start()
+                    attack = True
+                if attack:
+                    if spriteCount < len(self.skillSprites[5]):
+                        sprite = screen.blit(self.skillSprites[5][spriteCount],(self.x - self.skillSprites[5][spriteCount].get_width()/2 , self.y - self.skillSprites[5][spriteCount].get_height()/2))
+                        spriteCount += 1
+                    else:
+                        spriteCount = 0
+                        attack = False
             elif self.hotbar[self.currentSkill] == "Bomb":
                 if skillFlag and self.mana >= 15:
+                    self.sound["Bomb"].play()
                     self.mana -= 15
                     attack = True
                 if attack:
                     if spriteCount < len(self.skillSprites[0]):
                         sprite = screen.blit(self.skillSprites[0][spriteCount],(self.x - self.skillSprites[0][spriteCount].get_width()/2 , self.y - self.skillSprites[0][spriteCount].get_height()/2))
                         spriteCount += 1
-                        for i in enemyList:
-                            if sprite.colliderect(i.rect):
-                                i.health -= self.damage + 10
+                        if mode == 1:
+                            for i in enemyList:
+                                if sprite.colliderect(i.rect):
+                                    i.health -= self.damage + 10
+                        elif mode == 6:
+                            if sprite.colliderect(boss.rect):
+                                    boss.health -= self.damage + 10
                     else:
                         spriteCount = 0
                         attack = False
             elif self.hotbar[self.currentSkill] == "Freeze":
                 if skillFlag and self.mana >= 10:
+                    self.sound["Freeze"].play()
                     self.mana -= 10
+                    attack=True
                     timerFreeze = Timer(10.0, self.statReset, [None, None, None, self.damage, None, self.speeds, None, None]) #health, mana, stamina, damage, defense, speed, confused
                     self.speeds = [(0,1),(-1,0),(1,0),(0,-1)]
                     self.damage *= 2
                     timerFreeze.start()
+                if attack:
+                    if spriteCount < len(self.skillSprites[4]):
+                        sprite = screen.blit(self.skillSprites[4][spriteCount],(self.x - self.skillSprites[4][spriteCount].get_width()/2 , self.y - self.skillSprites[4][spriteCount].get_height()/2))
+                        spriteCount += 1
+                    else:
+                        spriteCount = 0
+                        attack = False
 
             elif self.hotbar[self.currentSkill] == "Siphon":
                 if skillFlag and self.mana >= 10:
                     self.mana -= 10
+                    attack==True
                     timerSiphon = Timer(10.0, self.statReset, [None, None, None, None, None, None, None, False]) #health, mana, stamina, damage, defense, speed, confused
                     self.siphoning = True
                     timerSiphon.start()
+                if attack:
+                    if spriteCount < len(self.skillSprites[3]):
+                        sprite = screen.blit(self.skillSprites[3][spriteCount],(self.x - self.skillSprites[3][spriteCount].get_width()/2 , self.y - self.skillSprites[3][spriteCount].get_height()/2))
+                        spriteCount += 1
+                    else:
+                        spriteCount = 0
+                        attack = False
 
-            elif self.hotbar[self.currentSkill] == "Chain":
+            elif self.hotbar[self.currentSkill] == "Magnet":
                 if skillFlag and self.mana >= 10:
-                    pass
+                    self.sound["Magnet"].play()
+                    self.mana -= 10
+                    attack = True 
+                if attack:
+                    if spriteCount < len(self.skillSprites[1]):
+                        sprite = screen.blit(self.skillSprites[1][spriteCount],(self.x - self.skillSprites[1][spriteCount].get_width()/2 , self.y + self.rect.h- self.skillSprites[1][spriteCount].get_height()/2-20))
+                        spriteCount += 1
+                    else:
+                        spriteCount = 0
+                        attack = False
+                    dist = hypot(mx - self.x, my - self.y)
+                    for i in enemies:
+                        if hypot(self.x - i.x, self.y - i.y ) < 1000:
+                            i.x += int(10*cos(i.angle))
+                            i.y += int(10*sin(i.angle))
+
+            elif self.hotbar[self.currentSkill] == "Helper":
+                if skillFlag and self.mana > 10:
+                    self.sound["Helper"].play()
+                    self.mana -= 10
+                    attack = True
+                    
+                if attack:
+                    if spriteCount < len(self.skillSprites[2]):
+                        sprite = screen.blit(self.skillSprites[2][spriteCount],(self.x - self.skillSprites[2][spriteCount].get_width()/2 , self.y + self.rect.h- self.skillSprites[2][spriteCount].get_height()/2-20))
+                        spriteCount += 1
+                    else:
+                        spriteCount = 0
+                        attack = False
+                    lst = [self.health, self.mana, self.stamina]
+                    if min(lst) == lst[0]:
+                        self.health += 2
+                    elif min(lst) == lst[1]:
+                        self.mana += 2
+                    elif min(lst) == lst[2]:
+                        self.stamina += 2
+                    if spriteCount >= 10:
+                        spriteCount = 0
+                        attack = False
                 
+        
+                    
         return attack, spriteCount  #returning so that the last known value of attack and spriteCount can be reused
 
     def fillMap(self,back_x,back_y,backPic):
         draw.circle(self.mapFog,(255,0,0),(int((self.x-back_x)/backPic.get_width()*900),int((self.y-back_y)/backPic.get_height()*600)),100)
         
     def update(self,flag,mx,my,key,surf,surf2,enemies,cx,cy,directions,backPic,back_mask): #Draws the player and calls most of the functions before it
+        self.attack , self.spriteCount = self.skillUse(rclick, self.attack, self.spriteCount, enemies)
+        self.fillMap(cx,cy,backPic)
+        self.mapFog = mapList[mapNum][2]
+        self.mapFog.set_colorkey((255,0,0))
         if self.levelingup and self.levelspritenum<=28:
             screen.blit(self.levelupanimation[int(self.levelspritenum)],(self.x-self.levelupanimation[int(self.levelspritenum)].get_width()/2,self.y-self.levelupanimation[int(self.levelspritenum)].get_height()/2))
             self.levelspritenum+=0.5
@@ -610,8 +770,9 @@ class Player(sprite.Sprite):
         self.drawSkillBar(surf2)
         self.hurt = self.takeDamage(enemies)
         self.heal()
-        self.attack , self.spriteCount = self.skillUse(rclick, self.attack, self.spriteCount, enemies)
         self.fillMap(cx,cy,backPic)
+        if mode == 1:
+            self.npcInteract(currentQuest)#IAN
         if self.confused:
             self.collidePoints = [
             [(self.rect[0]+self.rect[2]/3,self.rect[1]+3/4*self.rect[3]),(self.rect[0]+2/3*self.rect[2],self.rect[1]+3/4*self.rect[3]),(self.rect[0]+self.rect[2]/2,self.rect[1]+3/4*self.rect[3])],#Down
@@ -631,7 +792,7 @@ class Player(sprite.Sprite):
         
 class Enemy(sprite.Sprite):
     def __init__(self,health,kind,x,y):
-        super().__init__()
+        #super().__init__()
         self.kind = kind
         self.spritenum=0
         self.direction="up"
@@ -650,15 +811,18 @@ class Enemy(sprite.Sprite):
             self.image = self.images[0][0]
         else:
             self.loadenemyimages()
-            self.image = self.images[0][0]
+            if self.images != []:
+                self.image = self.images[0][0]
+            else:
+                self.image = Surface((50,50))
         self.draw = True
         self.image.set_colorkey((255,255,255))
         if x == None:
-            self.x = randint(0,2980)
+            self.x = randint(0,back.get_width())
         else:
             self.x = x
         if y == None:
-            self.y = randint(0,2380)
+            self.y = randint(0,back.get_height())
         else:
             self.y = y
         self.x = randint(0,2980)
@@ -725,14 +889,7 @@ class Enemy(sprite.Sprite):
         elif -3.14/4<=self.angle<3.14/4:
             self.direction="right"
             
-        if self.kind == 'Charger' and -10<=self.rect[0]<=1034 and -10<=self.rect[1]<=745:
-            if dist>50:
-                self.vx += int(self.speed*cos(self.angle))
-                self.vy += int(self.speed*sin(self.angle))
-            else:
-                self.vx -= int(self.speed*cos(self.angle))
-                self.vy -= int(self.speed*sin(self.angle))
-        elif self.kind == 'Monster' and -10<=self.rect[0]<=1034 and -10<=self.rect[1]<=745:
+        if self.kind == 'Monster' and -10<=self.rect[0]<=1034 and -10<=self.rect[1]<=745:
             if dist>50:
                 self.vx += int(self.speed*cos(self.angle))
                 self.vy += int(self.speed*sin(self.angle))
@@ -758,7 +915,7 @@ class Enemy(sprite.Sprite):
             else:
                 self.vx += int(self.speed*cos(self.angle))
                 self.vy += int(self.speed*sin(self.angle))
-        elif self.kind == 'Ghost': #RENAME TO GHOST
+        elif self.kind == 'Ghost': 
             if dist<100:
                 self.draw = True
                 self.vx += int(self.speed*cos(self.angle))
@@ -780,7 +937,16 @@ class Enemy(sprite.Sprite):
                 if enemy != self and dist<100:
                     if enemy.health < 100:
                         enemy.health += 1
-        self.grouping(enemies)
+        else:
+            if -10<=self.rect[0]<=1034 and -10<=self.rect[1]<=745:
+                if dist<50:
+                    self.vx += int(self.speed*cos(self.angle))
+                    self.vy += int(self.speed*sin(self.angle))
+                else:
+                    self.vx -= int(self.speed*cos(self.angle))
+                    self.vy -= int(self.speed*sin(self.angle))
+
+                print(self.vx,self.vy)
 
     def attacking(self):
         if 30<=enemy.rect[0]<=900 and 30<=enemy.rect[1]<=600:
@@ -831,6 +997,151 @@ class Enemy(sprite.Sprite):
                     screen.blit(self.images[3][int(self.spritenum)],self.rect)
             else:
                 screen.blit(self.image,(self.rect[0],self.rect[1]))
+
+class Boss(sprite.Sprite):
+    def __init__(self,health,x,y,kind):
+        super().__init__()
+        self.health = health
+        self.kind = kind
+        self.direction="up"
+        self.spritenum=0
+        self.images=[]
+        self.loadbossimages()
+        self.x,self.y = x,y
+        self.rect = Rect(x,y,50,50)
+        self.hurt = False
+        self.trapList = [] #Contains rects of all traps
+        self.suckCoord = None #The x,y coord for the pos the player is pushed towards
+        self.sucking = False #Used to stop enemy if he is sucking player in
+        self.healRect = None #A rect for the spot where the enemy heals at
+        self.healing = False #Used to stop the enemy from moving when he is healing
+        self.bullets = sprite.Group() #Hold enemys projectiles
+        self.angle = None #Angle towards destination
+    def loadbossimages(self):
+        self.images.append(glob.glob("Art\\Enemies\\"+self.kind+"\\up\\*.png"))
+        self.images.append(glob.glob("Art\\Enemies\\"+self.kind+"\\down\\*.png"))
+        self.images.append(glob.glob("Art\\Enemies\\"+self.kind+"\\right\\*.png"))
+        self.images.append(glob.glob("Art\\Enemies\\"+self.kind+"\\left\\*.png"))
+        for i in range (len(self.images)):
+                for x in range (len(self.images[i])):
+                    self.images[i][x]=image.load(self.images[i][x])
+    def createHealTotem(self): #Creates a totem for the enemy to heal in a random corner of the map
+        self.healRect = Rect(choice([200,724]),choice([200,400]),50,50)
+        self.healing = True
+    def heal(self): #Checks if the enemy is near the totem and heals him if he is
+        draw.rect(screen,(255,255,0),self.healRect)
+        if self.healRect.collidepoint(self.x,self.y):
+            self.health += 0.1
+    def confusion(self):#,player): #Causes the player controls to be reversed
+        timerConfusion = Timer(5, player.statReset, [None, None, None, None, None,[(0,5),(-5,0),(5,0),(0,-5)],False,False])
+        for pos in range(len(player.speeds)):
+            player.speeds[pos] = (player.speeds[pos][0]*-1,player.speeds[pos][1]*-1)
+        timerConfusion.start()
+        player.confusion = True #Used to stop the player from geting confused while confused (which makes controls normal - opposite of opposite is normal)
+    def reset(self,trapList,suck): #Empties trapList or stops sucking once done with it
+        if trapList:
+            self.trapList = []
+        if suck:
+            self.sucking = False
+            self.suckCoord = None
+    def traps(self,width,height,amount): #Randomly generates traps
+        timerTrap = Timer(5,self.reset,[True,False])
+        for i in range(amount):
+            x = randint(0,screen.get_width()-width)
+            y = randint(0,screen.get_height()-height)
+            if player.rect.colliderect(Rect(x,y,width,height)) == False: #Stops a trap from being created on player
+                self.trapList.append(Rect(x,y,width,height))
+        timerTrap.start()
+    def suck(self,x,y): #Gets or randomly sets an x,y pos to draw player to
+        suckTimer = Timer(5,self.reset,[False,True])
+        suckTimer.start()
+        self.sucking = True
+        if x == None:
+            suckx = randint(100,screen.get_width()-100)
+        else:
+            suckx = x
+        if y == None:
+            y = randint(100,screen.get_width()-100)
+        else:
+            sucky = y #Its a sucky variable name
+        self.suckCoord = (suckx,sucky)
+
+    def takeDamage(self):
+        if self.hurt:
+            self.health -= 10
+            self.hurt = False
+        
+    def drawTraps(self):#,player): #Draws traps and checks for collision with player
+        for trap in trapList:
+            draw.rect(screen,(255,255,255),trap)
+            if player.rect.colliderect(trap):
+                player.health -= 20
+    def createArrow(self): 
+        self.bullets.add(Projectile(self.x,self.y,4,4,self.angle,None,'HomingEnemy'))
+    def movement(self): #moves boss either to player or healing totem
+        if self.healing:
+            dx = self.healRect[0]+self.healRect[2]/2-self.x
+            dy = self.healRect[1]+self.healRect[3]/2-self.y
+            self.angle = atan2(dy,dx)
+            self.x += 5*cos(self.angle)
+            self.y += 5*sin(self.angle)
+        else:
+            dx = player.x-self.x
+            dy = player.y-self.y
+            dist = hypot(dx,dy)
+            self.angle = atan2(dy,dx)
+            if dist>150:
+                self.x += 5*cos(self.angle)
+                self.y += 5*sin(self.angle)
+            elif dist<100:
+                self.x -= 3*cos(self.angle)
+                self.y -= 3*sin(self.angle)
+        self.rect[0],self.rect[1] = self.x,self.y
+        if -3*3.14/4<=self.angle <-3.14/4:
+            self.direction="up"
+        if 3*3.14/4<=self.angle or self.angle<-3*3.14/4:
+            self.direction="left"
+        if 3.14/4<=self.angle<3*3.14/4:
+            self.direction="down"
+        elif -3.14/4<=self.angle<3.14/4:
+            self.direction="right"
+    def attack(self):
+        if randint(1,100) == 1 and len(self.trapList) == 0:
+            self.traps(50,50,10)
+        if randint(1,100) == 1 and player.confused == False:
+            self.confusion()
+        if randint(1,100) == 1:
+           choice([self.createArrow(),self.suck(self.x,self.y)])
+    def update(self,cx,cy,enemyList,key):
+        if self.images != []:
+            if self.spritenum >= len(self.images[0]):
+                self.spritenum = 0
+            if self.direction=="up":
+                screen.blit(self.images[0][int(self.spritenum)],self.rect)
+            if self.direction=="down":
+                screen.blit(self.images[1][int(self.spritenum)],self.rect)
+            if self.direction=="right":
+                screen.blit(self.images[2][int(self.spritenum)],self.rect)
+            if self.direction=="left":
+                screen.blit(self.images[3][int(self.spritenum)],self.rect)
+            self.spritenum+=1
+        self.attack()
+        self.takeDamage()
+        if self.health<20 and self.healing == False:
+           self.createHealTotem()
+        if self.healing:
+            self.heal()
+        if self.health>50:
+            self.healing = False
+            self.healRect = None
+        if self.sucking: #Moves player to spot
+            draw.circle(screen,(0,0,255),(int(self.suckCoord[0]),int(self.suckCoord[1])),5)
+            player.x += 2*cos(atan2(self.suckCoord[1]-player.y,self.suckCoord[0]-player.x))
+            player.y += 2*sin(atan2(self.suckCoord[1]-player.y,self.suckCoord[0]-player.x))
+        else:
+            self.movement()
+        
+        self.bullets.update(cx,cy,self.bullets,enemyList,key) #Updates boss` projectiles
 
 class Projectile(sprite.Sprite):
     def __init__(self,x,y,vx,vy,angle,bigBulletSize,kind):
@@ -897,33 +1208,52 @@ Offsets the arrow depending on where the player is moving (faster if player is m
     def update(self,cx,cy,enemyArrows,enemyList,key):
         #and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]
         if self.kind == 'Spell' or self.kind == 'Arrow':    #Basic attacks
-            for enemy in enemyList:
-                if self.rect.colliderect(enemy.rect):
+            if mode == 1:
+                for enemy in enemyList:
+                    if self.rect.colliderect(enemy.rect):
+                        player.bullets.remove(self)
+                        enemy.health -= player.damage
+                if -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
+                    self.speed(key)
+                else:
                     player.bullets.remove(self)
-                    enemy.health -= player.damage
-            if -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
-                self.speed(key)
-            else:
-                player.bullets.remove(self)
+            elif mode == 6:
+                if self.rect.colliderect(boss.rect):
+                    player.bullets.remove(self)
+                    boss.health -= player.damage
+                if -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
+                    self.speed(key)
+                else:
+                    player.bullets.remove(self)
 #Skills and more complex projectiles
         elif self.kind == 'PoisonArrow':
-            for enemy in enemyList:
-                if self.rect.colliderect(enemy.rect):
+            if mode == 1:
+                for enemy in enemyList:
+                    if self.rect.colliderect(enemy.rect):
+                        player.bullets.remove(self)
+                        enemy.poisoned.append(enemy)
+                if -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
+                    self.speed(key)
+                else:
                     player.bullets.remove(self)
-                    enemy.poisoned.append(enemy)
-            if -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
-                self.speed(key)
-            else:
-                player.bullets.remove(self)
         elif self.kind == 'BigBullet':
-            for enemy in enemyList:
-                if self.rect.colliderect(enemy.rect):
+            if mode == 1:
+                for enemy in enemyList:
+                    if self.rect.colliderect(enemy.rect):
+                        player.bullets.remove(self)
+                        enemy.health -= player.damage*self.rect[2]
+                if -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
+                    self.speed(key)
+                else:
                     player.bullets.remove(self)
-                    enemy.health -= player.damage*self.rect[2]
-            if -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
-                self.speed(key)
-            else:
-                player.bullets.remove(self)
+            elif mode == 6:
+                if self.rect.colliderect(boss.rect):
+                    player.bullets.remove(self)
+                    boss.health -= player.damage*self.rect[2]
+                if -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
+                    self.speed(key)
+                else:
+                    player.bullets.remove(self)
         elif self.kind == 'HomingArrow':
             for enemy in enemyList:
                 if self.rect.colliderect(enemy.rect):
@@ -938,6 +1268,7 @@ Offsets the arrow depending on where the player is moving (faster if player is m
                 enemyArrows.remove(self)
             elif -50<= self.x <= 1074 and -50<= self.y <= 750 and wallCol(back_mask,[(self.rect[0]+self.rect[2]/2,self.rect[1]+self.rect[3]/2)],back_x,back_y) == [False]:
                 self.speed(key)
+                player.projectileHit = True
             else:
                 enemyArrows.remove(self)
                 
@@ -976,6 +1307,49 @@ class Boots(sprite.Sprite):
 #=================================================== Classes ===================================================#
 
 #================================================== Functions ==================================================#
+def newEnemies(mode):
+    enemies = []
+    if mode != 0:
+        for i in range(50):
+            enemy = Enemy(100,choice(['Theif','Charger','Archer','Monster','Dragon','Mage',]),None, None)#Snake,Scorpie
+            '''if wallCol(back_mask,[(enemy.x,enemy.y)],back_x,back_y) == [False]:'''
+            enemies.append(enemy)
+    return enemies
+
+def changeMap(mapList,mapNum,back_mask,back_x,back_y,back,player):
+    global enemies
+    if back_mask.get_at((int(-back_x+player.x),int(-back_y+player.y+20))) == (255,255,0):
+        enemies = newEnemies(mode)
+        if mapNum == 0:
+            mapList[mapNum][2] = player.mapFog
+            if int(-back_x+player.x)<back.get_width()/4: #mapNum,back_x,back_y,player.x,player.y
+                player.mapFog = mapList[1][2]
+                return 1,-2100,-1000,900,400,1 #Left (ICE)
+            elif int(-back_x+player.x)>3*back.get_width()/4:
+                player.mapFog = mapList[3][2]
+                return 3,0,-461,112,400,1 #Right (DESERT)
+            elif int(-back_y+player.y)>back.get_height()/4:
+                player.mapFog = mapList[2][2]
+                return 2,-1000,0,500,400,1 #Bottom (FOREST)
+            elif int(-back_y+player.y)<back.get_height()/4 :
+                return 0,0,0,200,200,6 #Top
+        elif mapNum == 1:#left map
+            mapList[mapNum][2] = player.mapFog
+            player.mapFog = mapList[0][2]
+            return 0,0,-1233+400,100,400,1
+        elif mapNum == 2: #bottom map
+            mapList[mapNum][2] = player.mapFog
+            player.mapFog = mapList[0][2]
+            return 0,-1561+500,-3081+400,500,400,1
+        elif mapNum == 3: #right
+            mapList[mapNum][2] = player.mapFog
+            player.mapFog = mapList[0][2]
+            return 0,-3057+900,-1205+400,900,400,1
+    elif back_mask.get_at((int(-back_x+player.x),int(-back_y+player.y+20))) == (0,255,0):
+        return mapNum,0,0,player.x,player.y,6
+    else:
+        return mapNum,back_x,back_y,player.x,player.y,1
+    
 def drawShopBack(money,pic):
     shopRects = []
     screen.fill((255,255,255))
@@ -1130,7 +1504,7 @@ def drawInventoryStats(infoSurface,x,y,item,kind):
     draw.rect(infoSurface,(255,255,255,255),(0,0,infoSurface.get_width(),infoSurface.get_height()),4)
     infoSurface.blit(itemStatsFont.render(item.name,True,(255,255,255)),(5,5))
     if kind == 0:
-        infoSurface.blit(itemStatsFont.render('Damage: %s' % (item.damage),True,(255,255,255)),(5,30))
+        infoSurface.blit(itemStatsFont.render('Damage: %s' % (int(item.damage)),True,(255,255,255)),(5,30))
     else:
         infoSurface.blit(itemStatsFont.render('Defense: %s' % (int(item.defense*100)),True,(255,255,255)),(5,30))
     infoSurface.blit(itemStatsFont.render(item.description,True,(255,255,255)),(5,45))
@@ -1150,7 +1524,7 @@ def changeGear(player,equipping,kind):
         player.currentBoots = equipping
         player.inventory[kind][player.inventory[kind].index(equipping)] = x
 
-def drawInventorySlots(inventRects,player,mx,my,click,infoSurface):
+def drawInventorySlots(inventRects,player,mx,my,click,infoSurface,rclick):
     for y in range(3):
         for x in range(len(player.inventory[y])):
             screen.blit(player.inventory[y][x].image,(inventRects[y][x][0],inventRects[y][x][1]))
@@ -1159,7 +1533,9 @@ def drawInventorySlots(inventRects,player,mx,my,click,infoSurface):
                 drawInventoryStats(infoSurface,mx-200,my-100,player.inventory[y][inventRects[y].index(rect)],y) #200,100 is the dimensions of the infoSurf
                 if click:
                     changeGear(player,player.inventory[y][inventRects[y].index(rect)],y)
-        if equippedRect[y].collidepoint(mx,my):
+                elif rclick:
+                    del player.inventory[y][inventRects[y].index(rect)]
+    if equippedRect[y].collidepoint(mx,my):
             if y == 0:
                 drawInventoryStats(infoSurface,mx-200,my-100,player.currentWeapon,y)
             elif y == 1:
@@ -1167,9 +1543,9 @@ def drawInventorySlots(inventRects,player,mx,my,click,infoSurface):
             elif y == 2:
                 drawInventoryStats(infoSurface,mx-200,my-100,player.currentBoots,y)
 
-def draw_inventory(player,pic,inventRects,click,mx,my,infoSurface,alphaSurf):
+def draw_inventory(player,pic,inventRects,click,mx,my,infoSurface,alphaSurf,rclick):
     drawInventoryBase(alphaSurf,pic,player)
-    drawInventorySlots(inventRects,player,mx,my,click,infoSurface)
+    drawInventorySlots(inventRects,player,mx,my,click,infoSurface,rclick)
 
 def drawMap(backPic,player,pos):
     screen.fill((0,0,0))
@@ -1231,7 +1607,7 @@ def wallCol(img,coordList,back_x,back_y):
         
 def tabs(player,pic,inventRects,click,mx,my,infoSurface,alphaSurf,tabMode,backPic,skillMenu,pos,selectedskill,key):
     if tabMode == 0:
-        draw_inventory(player,pic,inventRects,click,mx,my,infoSurface,alphaSurf)
+        draw_inventory(player,pic,inventRects,click,mx,my,infoSurface,alphaSurf,rclick)
     elif tabMode == 1:
         drawMap(backPic,player,pos)
     elif tabMode == 2:
@@ -1343,7 +1719,7 @@ def characterSelection(click,choiceRects,backRect):
     titleMode = 1
     player = None
     choices = [
-        [Weapons('Rusty Sword','A REALLY bad sword',5,'Art\Weapons\swords\sword1.png',1,'Sword'),'Knight',["Block","Rambo","Bomb","Pull","Siphon","Freeze","Deflect"]],
+        [Weapons('Rusty Sword','A REALLY bad sword',5,'Art\Weapons\swords\sword1.png',1,'Sword'),'Knight',["Block","Rambo","Bomb","Magnet","Siphon","Freeze","Helper"]],
         [Weapons('Old Staff','A REALLY bad staff',5,'Art\Weapons\Staffs\staff1.png',1,'Staff'),'Wizard',["Heal","Fire","Ring","Boost","Charge","Turtle","Shadow"]],
         [Weapons('Old Bow','A REALLY bad bow',5,'Art\Weapons\Bows\Bow0.png',1,'Bow'),'Archer',["Sniper", "Barrage", "PoisonArrow", "FollowMe","Fear","RadiusBarrage","ForestGump"]]
         ]
@@ -1351,17 +1727,12 @@ def characterSelection(click,choiceRects,backRect):
         screen.blit(textbox3,(choiceRects[x][0],choiceRects[x][1]))
         screen.blit(titlePics[x],(choiceRects[x][0]+175-titlePics[x].get_width()/2,choiceRects[x][1]+170-titlePics[x].get_height()/2))
         if choiceRects[x].collidepoint(mx,my) and click:
-            player = Player(50,100,20,[[],[],[]],choices[x][0],Armour('Bob2','Bob2',0.01,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,choices[x][1],10,0.1,choices[x][2])
+            player = Player(100,100,100,[[],[],[]],choices[x][0],Armour('Bob2','Bob2',0.01,'Art\Armour\Knight\Armour0.png','Armour'),Boots('Base','FaNcY',0.01,'Art\Boots\Boot0.png','Boots'),100000,choices[x][1],10,0.1,choices[x][2])
             mixer.music.load("Song2.wav")
             mixer.music.play()
-
-            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            player.health = 999
-            player.mana = 999
-            player.stamina = 999
-            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             mode = 1
             titleMode = 0
+            circleout(screen.copy(),0)
     draw.rect(screen,(255,255,255),backRect)
     if backRect.collidepoint(mx,my) and click:
         mode = 0
@@ -1381,9 +1752,56 @@ def drawIntroScreen(tx,ty,titleScrollx,titleScrolly,back,back_x,back_y,textbox1,
     elif titleMode == 2:
         mode = 0
         running = False
-    return mode,0,0,firePos,running,titleMode,player,tx,ty,titleScrollx,titleScrolly
-#===========================================================================================================================================#
+    return mode,0,0,firePos,running,titleMode,player,tx,ty,titleScrollx,titleScrolly, 0
 
+fadein=True
+#============ Animations======#
+def drawcircle(w,h,s):
+    circlesurf=Surface((w,h),SRCALPHA)
+    draw.ellipse(circlesurf,(0,0,0),(0,0,w,h))
+    draw.ellipse(circlesurf,(255,255,255,0),(s,s,w-s*2,h-s*2))
+    screen.blit(circlesurf,((screen.get_width()-w)//2,(screen.get_height()-h)//2))
+    return
+def drawemptycircle(w,h):
+    circlesurf=Surface((screen.get_width(),screen.get_height()),SRCALPHA)
+    circlesurf.fill((0,0,0))
+    draw.ellipse(circlesurf,(255,255,255,0),(((screen.get_width()-w)//2),((screen.get_height()-h)//2),w,h))
+    screen.blit(circlesurf,(0,0))
+    return
+def circleout (pic,tim):
+    if pic!= None:
+        screen.blit(pic,(0,0))
+    radius=int((screen.get_width()**2+screen.get_height()**2)**0.5)
+    wh=radius
+    for i in range(radius//2):
+        if wh<=5:
+            draw.ellipse(screen,(0,0,0),(0,0,5,5))
+            break
+        else:
+            drawcircle(wh,wh,5)
+        wh-=5
+        time.delay(tim)
+        display.flip()
+    return
+def circlein (pic,tim):
+    radius=int((screen.get_width()**2+screen.get_height()**2)**0.5)
+    wh=1
+    for i in range(radius//5):
+        screen.blit(pic,(0,0))
+        drawemptycircle(wh,wh)
+        wh+=5
+        time.delay(tim)
+        display.flip()
+    return
+
+
+
+
+#===========================================================================================================================================#
+boss1 = True
+boss2 = True
+boss3 = True
+mapNum = 0
 running =True
 screen = display.set_mode((1024,700))
 clock = time.Clock()
@@ -1394,8 +1812,14 @@ npcsound={"Hello":[mixer.Sound(x)for x in glob.glob("Art/Sound/npc/hello/*.wav")
 '''
 Loads the background map and creates the x and y variables used for to offset the background for movement
 '''
-back = image.load('Art\Backgrounds\Background.jpg')
-back_mask = image.load('Art\Backgrounds\BackgroundMASK.png')
+mapList = [ #[Map, map_mask, fog]
+    [image.load('Art/Backgrounds/Background.jpg'),image.load('Art/Backgrounds/BackgroundMASK.png'),transform.scale(image.load('Art\Misc\Fog.png'),(900,600)).convert()],
+    [image.load('Art/Backgrounds/map2.png'),image.load('Art/Backgrounds/map2mask.png'),transform.scale(image.load('Art\Misc\Fog.png'),(900,600)).convert()],
+    [image.load('Art/Backgrounds/map3.png'),image.load('Art/Backgrounds/map3mask.png'),transform.scale(image.load('Art\Misc\Fog.png'),(900,600)).convert()],
+    [image.load('Art/Backgrounds/map4.png'),image.load('Art/Backgrounds/map4mask.png'),transform.scale(image.load('Art\Misc\Fog.png'),(900,600)).convert()]
+    ]
+back = mapList[mapNum][0]#IAN
+back_mask = mapList[mapNum][1]
 back_x = 0
 back_y = 0
 #===================================#
@@ -1464,8 +1888,19 @@ saves = []
     #saves.append(load(open("saves\save"+str(i)+".p","rb")))
 
 enemies = []
-for i in range(100):
-    enemies.append(Enemy(100,choice(['Theif','Charger','Archer','Monster','Dragon','Mage']),None, None))#Snake,Scorpien
+#for i in range(100):
+#    enemies.append(Enemy(100,choice(['Theif','Charger','Archer','Monster','Dragon','Mage']),None, None))#Snake,Scorpien
+
+
+quests = [Rect(1675,1660,70,70),Rect(1200,1300,50,50),Rect(1300,1300,50,50),Rect(1400,1300,50,50)]#IAN
+currentQuest = [Rect(1675,1660,70,70)]#IAN    enemies.append(Enemy(100,choice(['Ghost','Charger','Archer','Monster','Dragon','Mage']),None, None))#Snake,Scorpien
+
+bootShop=Rect(1960,2400,50,50)
+armorShop=Rect(1120,2220,50,50)
+weaponShop=Rect(1150,870,50,50)
+doorKeeper=Rect(680,1200,50,50)
+wellMan=Rect(1748,570,50,50)
+helpMeRects=[Rect(1040,505,50,50),Rect(1740,570,50,50),Rect(1740,1160,50,50),Rect(2160,1970,50,50),Rect(2255,1790,50,50)]
 
 inventRects = [[],[],[]]
 for i in range(2):
@@ -1504,15 +1939,27 @@ shopPic = image.load("Art\\Menus\\shelfs.jpg")
 titleMenu = image.load('Art\\Misc\\Start_Title.png')
 skillMenu = image.load('Art\\Menus\\skills.png')
 
-titlePics = [transform.scale(image.load('Art\Player\Knight\Player00.png'),(100,200)),transform.scale(image.load('Art\Player\Wizard\Player00.png'),(100,200)),transform.scale(image.load('Art\Player\Archer\Player00.png'),(100,200))]
+#======= Speech =======#IAN
+
+quest1= image.load("Art//Quests//quest1.png")
+quest2= image.load("Art//Quests//quest2.png")
+quest3= image.load("Art//Quests//quest3.png")
+questSpeech=[image.load("Art//Quests//quest1Speech.png"),image.load("Art//Quests//quest2Speech.png"),image.load("Art//Quests//quest3Speech.png"),image.load("Art//Quests//quest2Speech.png")#IAN
+             ,image.load("Art//Quests//quest2Speech.png")]
+helpSay=choice([image.load("Art/Quests/helpMe1.png"),image.load("Art/Quests/helpMe2.png")
+                ,image.load("Art/Quests/helpMe3.png"),image.load("Art/Quests/helpMe4.png")])
+titlePics = [transform.scale(image.load('Art\Player\Knight\Player00.png'),(150,200)),transform.scale(image.load('Art\Player\Wizard\Player00.png'),(150,200)),transform.scale(image.load('Art\Player\Archer\Player00.png'),(150,200))]
                                                        
 #======================#
-
+bossmaps=[image.load('Art/Backgrounds/boss/map.png'),image.load('Art/Backgrounds/boss/icemap.png'),
+          image.load('Art/Backgrounds/boss/forestmap.png'),image.load('Art/Backgrounds/boss/desertmap.png')]
+bossmasks=[image.load('Art/Backgrounds/boss/mapmask.png'),image.load('Art/Backgrounds/boss/icemapmask.png'),image.load('Art/Backgrounds/boss/forestmapmask.png'),image.load('Art/Backgrounds/boss/desertmapmask.png')]
+bosses = [Boss(1,100,100,'Eiznekcam'),Boss(5000,100,100,'Skeletonmage'),Boss(5000,100,100,'Greentroll'),Boss(5000,100,100,'Hairymonster')]
 mode = 0 # 0 = menu, 1 = game, 2 = inventory, 3 = pause, 4 = save, 5 = shop
+enemies = newEnemies(mode)
 titleMode = 0 #ADDED THIS
 tabMode = 0
 selectedskill = None
-
 while running:    
     for e in event.get():
         if e.type == KEYDOWN:
@@ -1526,29 +1973,42 @@ while running:
                     mode = 3
                 elif mode == 3:
                     mode = 1
-            if e.key == K_z:
+            if e.key == K_b:
+                if mapNum<3:
+                    mapNum += 1
+                else:
+                    mapNum = 0
+            if e.key == K_p:
                 if mode == 1:
-                    mode = 5
-                    choice(npcsound["Hello"]).play()
-                    shopArmour = []
-                    for armour in generateItems(player,armourFile,11):
-                        if player.kind == 'Knight':
-                            shopArmour.append(Armour(armour,'Good Stuffs',gauss(0.1+player.level/20,0.05),'Art\Armour\Knight\Armour%d.png' % (randint(0,5)),'Armour'))
-                        if player.kind == 'Wizard':
-                            shopArmour.append(Armour(armour,'Good Stuffs',gauss(0.1+player.level/20,0.05),'Art\Armour\Knight\Armour%d.png' % (randint(0,5)),'Armour'))
-                        if player.kind == 'Archer':
-                            shopArmour.append(Armour(armour,'Good Stuffs',gauss(0.1+player.level/20,0.05),'Art\Armour\Knight\Armour%d.png' % (randint(0,5)),'Armour'))
-                    shopWeapons = []
-                    for weapon in generateItems(player,weaponFile,11):
-                        if player.kind == 'Knight':
-                            shopWeapons.append(Weapons(weapon,'Good Stuffs',gauss(10+5*player.level,3),'Art\Weapons\Swords\Sword%d.png' % (randint(1,11)),1,'Sword'))
-                        if player.kind == 'Wizard':
-                            shopWeapons.append(Weapons(weapon,'Good Stuffs',gauss(10+5*player.level/20,3),'Art\Weapons\Staffs\Staff%d.png' % (randint(1,16)),1,'Staff'))
-                        if player.kind == 'Archer':
-                            shopWeapons.append(Weapons(weapon,'Good Stuffs',gauss(10+5*player.level/20,3),'Art\Weapons\Bows\Bow%d.png' % (randint(0,14)),1,'Bow'))
-                    shopBoots = []
-                    for boot in generateItems(player,bootsFile,11):
-                        shopBoots.append(Boots(boot,'Good Stuffs',gauss(0.03+player.level/20,0.02),'Art\Boots\Boot%d.png' % (randint(0,2)),'Boots'))
+                    if armorShop.collidepoint(-back_x+530,-back_y+345):
+                        mode = 5
+                        choice(npcsound["Hello"]).play()
+                        shopArmour = []
+                        for armour in generateItems(player,armourFile,11):
+                            if player.kind == 'Knight':
+                                shopArmour.append(Armour(armour,'Good Stuffs',gauss(0.1+player.level/20,0.05),'Art/Armour/Knight/Armour%d.png' % (randint(0,5)),'Armour'))
+                            if player.kind == 'Wizard':
+                                shopArmour.append(Armour(armour,'Good Stuffs',gauss(0.1+player.level/20,0.05),'Art/Armour/Knight/Armour%d.png' % (randint(0,5)),'Armour'))
+                            if player.kind == 'Archer':
+                                shopArmour.append(Armour(armour,'Good Stuffs',gauss(0.1+player.level/20,0.05),'Art/Armour/Knight/Armour%d.png' % (randint(0,5)),'Armour'))
+
+                    elif weaponShop.collidepoint(-back_x+530,-back_y+345):
+                        mode = 5
+                        choice(npcsound["Hello"]).play()
+                        shopWeapons = []
+                        for weapon in generateItems(player,weaponFile,11):
+                            if player.kind == 'Knight':
+                                shopWeapons.append(Weapons(weapon,'Good Stuffs',gauss(10+5*player.level,3),'Art/Weapons/Swords/Sword%d.png' % (randint(1,11)),1,'Sword'))
+                            if player.kind == 'Wizard':
+                                shopWeapons.append(Weapons(weapon,'Good Stuffs',gauss(10+5*player.level/20,3),'Art/Weapons/Staffs/Staff%d.png' % (randint(1,16)),1,'Staff'))
+                            if player.kind == 'Archer':
+                                shopWeapons.append(Weapons(weapon,'Good Stuffs',gauss(10+5*player.level/20,3),'Art/Weapons/Bows/Bow%d.png' % (randint(0,14)),1,'Bow'))
+                    elif bootShop.collidepoint(-back_x+530,-back_y+345):
+                        mode = 5
+                        choice(npcsound["Hello"]).play()
+                        shopBoots = []
+                        for boot in generateItems(player,bootsFile,11):
+                            shopBoots.append(Boots(boot,'Good Stuffs',gauss(0.03+player.level/20,0.02),'Art/Boots/Boot%d.png' % (randint(0,2)),'Boots'))
                 elif mode == 5:
                     choice(npcsound["Bye"]).play()  
                     mode = 1
@@ -1566,6 +2026,7 @@ while running:
                         tabMode -= 1
                     else:
                         tabMode = 2
+
                 
         if e.type == MOUSEBUTTONDOWN:
             if e.button == 1:
@@ -1583,7 +2044,10 @@ while running:
     mb = mouse.get_pressed()
 
     if mode == 0: 
-        mode,back_x,back_y,firePos,running,titleMode,player,tx,ty,titleScrollx,titleScrolly = drawIntroScreen(tx,ty,titleScrollx,titleScrolly,back,back_x,back_y,textbox1,name,fire,firePos,titleMenu,titleRects,titleMode,click,choiceRects,backRect,mx,my,running)
+        mode,back_x,back_y,firePos,running,titleMode,player,tx,ty,titleScrollx,titleScrolly, mapNum = drawIntroScreen(tx,ty,titleScrollx,titleScrolly,back,back_x,back_y,textbox1,name,fire,firePos,titleMenu,titleRects,titleMode,click,choiceRects,backRect,mx,my,running)
+        if fadein==True:
+            circlein(screen.copy(),0)
+            fadein=False
     elif mode == 2:
         selectedskill = tabs(player,inventoryPic,inventRects,click,mx,my,infoSurface,alphaSurf,tabMode,back,skillMenu,mapPos,selectedskill,kb)
         if mapPos >= len(player.animations[0])-1:
@@ -1597,13 +2061,28 @@ while running:
         mode = savescreen(screen.copy(),savePic,saves)
 
     elif mode == 5:
-        if player.x<screen.get_width()/3:
-            player.money = drawShop(shopFont,click,mx,my,player.money,shopPic,shopBoots)
-        elif player.x>2*screen.get_width()/3:
-            player.money = drawShop(shopFont,click,mx,my,player.money,shopPic,shopWeapons)
-        else:
+        if weaponShop.collidepoint(-back_x+530,-back_y+345):
+           player.money = drawShop(shopFont,click,mx,my,player.money,shopPic,shopWeapons)
+        elif bootShop.collidepoint(-back_x+530,-back_y+345):
+           player.money = drawShop(shopFont,click,mx,my,player.money,shopPic,shopBoots)
+        elif armorShop.collidepoint(-back_x+530,-back_y+345):
             player.money = drawShop(shopFont,click,mx,my,player.money,shopPic,shopArmour)
-        
+    elif mode==6:
+        boss = bosses[mapNum]
+        back = bossmaps[mapNum]
+        back_mask = bossmasks[mapNum]
+        screen.blit(back,(back_x,back_y))
+        directions = [[kb[K_DOWN],kb[K_s]],[kb[K_LEFT],kb[K_a]],[kb[K_RIGHT],kb[K_d]],[kb[K_UP],kb[K_w]]]
+        boss.update(back_x,back_y,enemies,kb)
+        for trap in boss.trapList:
+            draw.rect(screen,(0,0,0),trap)
+            if player.rect.colliderect(trap):
+                player.health -= 10
+        back_x,back_y = player.update(click,mx,my,kb,hud,skillBarPic,enemies,back_x,back_y,directions,back,back_mask)
+        if boss.health<= 0:
+            mode = 1
+            mapNum = 0
+            player.x,player.y = 300,300
     else:
 
 #======================================================================== Map Movement =============================================================================#
@@ -1629,10 +2108,18 @@ while running:
         '''
         Update all sprites (their movement, stats, etc.)
         '''
+        if boss1 and boss2 and boss3:
+            mapList[0][0] = image.load('Art//Backgrounds//BackgroundOpen.jpg')
+            mapList[0][1] = image.load('Art//Backgrounds//backgroundOpenMASK.png')
+            boss1,boss2,boss3 = False,False,False
         for enemy in enemies:
             enemy.update(back_x,back_y,enemies,kb,enemies,back_mask)  #updates enemies
         back_x,back_y = player.update(click,mx,my,kb,hud,skillBarPic,enemies,back_x,back_y,directions,back,back_mask) #Updates player
-        drawTraps(screen,player,trapList)
+        back = mapList[mapNum][0]
+        back_mask = mapList[mapNum][1]
+        mapNum,back_x,back_y,player.x,player.y,mode = changeMap(mapList,mapNum,back_mask,back_x,back_y,back,player)
+        if player.health < 1:
+            quit()
     #==================================#
     click = False
     rclick = False
